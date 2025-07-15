@@ -14,9 +14,11 @@
       <button type="submit">Admin</button>
     </form>
     {% endif %}
+    {% if show_stats_link %}
     <form method="get" action="/stats">
       <button type="submit">Stats</button>
     </form>
+    {% endif %}
     {% if show_back %}
     <form method="get" action="/">
       <button type="submit">Back to Ranking</button>

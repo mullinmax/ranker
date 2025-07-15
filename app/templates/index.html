@@ -1,34 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Rank Media{% endblock %}
 {% block content %}
-{% if file %}
-<div class="media-container">
-  <img class="media-preview" src="/media/{{file}}" alt="media" />
-  {% if last_ranked %}
-  <span class="last-ranked{% if last_ranked_today %} today{% endif %}">last ranked: {{ last_ranked }}</span>
-  {% endif %}
+{% if files %}
+<div class="media-grid">
+  {% for f in files %}
+  <div class="media-container" data-file="{{ f }}" onclick="toggleRank(this)">
+    <img class="media-preview" src="/media/{{ f }}" alt="{{ f }}" />
+    <span class="medal"></span>
+  </div>
+  {% endfor %}
 </div>
 <form id="rate-form" action="/rate" method="post">
-  <input type="hidden" id="file" name="file" value="{{file}}" />
-  <input type="hidden" id="score" name="score" />
-  {% for i in range(1,6) %}
-    <button type="button" onclick="rate({{i}})">{{i}}</button>
-  {% endfor %}
+  <input type="hidden" id="order" name="order" />
+  <button id="submit-btn" type="submit" style="display:none;">Submit</button>
 </form>
 {% else %}
 <p>No media files found</p>
 {% endif %}
 <script>
-document.addEventListener('keydown', function(e) {
-  const key = e.key;
-  if (['1','2','3','4','5'].includes(key)) {
-    document.getElementById('score').value = key;
-    document.getElementById('rate-form').submit();
+let selected = [];
+const maxRank = 3;
+function toggleRank(el){
+  const file = el.dataset.file;
+  const idx = selected.indexOf(file);
+  if(idx >= 0){
+    selected.splice(idx,1);
+  } else if(selected.length < maxRank){
+    selected.push(file);
   }
-});
-function rate(val) {
-  document.getElementById('score').value = val;
-  document.getElementById('rate-form').submit();
+  update();
+}
+function update(){
+  document.querySelectorAll('.media-container').forEach(c=>{
+    const medal = c.querySelector('.medal');
+    const idx = selected.indexOf(c.dataset.file);
+    medal.textContent = '';
+    medal.className = 'medal';
+    if(idx === 0){ medal.textContent='🥇'; }
+    else if(idx === 1){ medal.textContent='🥈'; }
+    else if(idx === 2){ medal.textContent='🥉'; }
+  });
+  let order = [...selected];
+  document.querySelectorAll('.media-container').forEach(c=>{
+    if(!order.includes(c.dataset.file)) order.push(c.dataset.file);
+  });
+  document.getElementById('order').value = order.join(',');
+  document.getElementById('submit-btn').style.display =
+      selected.length >= maxRank ? 'inline-block' : 'none';
 }
 </script>
 {% endblock %}
