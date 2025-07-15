@@ -32,6 +32,10 @@
   <input type="file" name="media_files" multiple required />
   <input type="submit" value="Upload" />
 </form>
+<h2>Remove Duplicate Images</h2>
+<form method="post" action="/admin/remove_duplicates" onsubmit="return confirm('Remove duplicate images?');">
+  <button type="submit">Remove Duplicates</button>
+</form>
 <script>
 const form = document.getElementById('upload-form');
 form.addEventListener('submit', async (e) => {
