@@ -132,18 +132,6 @@ def get_media_files(username: str, count: int) -> list[str]:
     return [f for _, f in scored_files[:count]]
 
 
-def get_last_rating_time(username: str, media: str) -> int | None:
-    conn = sqlite3.connect(DATABASE)
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT MAX(rated_at) FROM ratings WHERE username=? AND media=?",
-        (username, media),
-    )
-    row = cur.fetchone()
-    conn.close()
-    return row[0] if row and row[0] is not None else None
-
-
 def change_user_password(username: str, new_password: str) -> None:
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -173,21 +161,6 @@ def delete_user(username: str) -> None:
     cur.execute("DELETE FROM ratings WHERE username=?", (username,))
     conn.commit()
     conn.close()
-
-
-def get_media_stats(limit: int = 5) -> tuple[list[tuple[str, float]], list[tuple[str, float]]]:
-    conn = sqlite3.connect(DATABASE)
-    cur = conn.cursor()
-    cur.execute("SELECT media, AVG(score) FROM ratings GROUP BY media")
-    rows = cur.fetchall()
-    conn.close()
-    if not rows:
-        return [], []
-    rows.sort(key=lambda r: r[1])
-    highest = rows[:limit]
-    lowest = rows[-limit:][::-1]
-    return highest, lowest
-
 
 def get_user_media_stats(
     username: str, limit: int = 5
