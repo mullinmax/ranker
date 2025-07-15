@@ -1,6 +1,7 @@
 import hashlib
 import os
 import sqlite3
+import time
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -32,8 +33,13 @@ def init_db():
         "CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT)"
     )
     cur.execute(
-        "CREATE TABLE IF NOT EXISTS ratings (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, media TEXT, score INTEGER)"
+        "CREATE TABLE IF NOT EXISTS ratings (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, media TEXT, score INTEGER, rated_at INTEGER)"
     )
+    # Ensure rated_at column exists if database was created with older schema
+    cur.execute("PRAGMA table_info(ratings)")
+    cols = [row[1] for row in cur.fetchall()]
+    if "rated_at" not in cols:
+        cur.execute("ALTER TABLE ratings ADD COLUMN rated_at INTEGER")
     conn.commit()
     conn.close()
 
@@ -67,13 +73,32 @@ def list_users() -> list[str]:
     return rows
 
 
-def get_media_file() -> str | None:
+def get_media_file(username: str) -> str | None:
     files = [
         f
         for f in os.listdir(MEDIA_DIR)
         if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
-    return sorted(files)[0] if files else None
+    if not files:
+        return None
+
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT media, MAX(rated_at) FROM ratings WHERE username=? GROUP BY media",
+        (username,),
+    )
+    last_times = {row[0]: row[1] for row in cur.fetchall()}
+    conn.close()
+
+    scored_files: list[tuple[int, str]] = []
+    for f in files:
+        last_time = last_times.get(f)
+        last_time = last_time if last_time is not None else 0
+        scored_files.append((last_time, f))
+
+    scored_files.sort(key=lambda x: (x[0], x[1]))
+    return scored_files[0][1]
 
 
 def change_user_password(username: str, new_password: str) -> None:
@@ -92,7 +117,7 @@ def index(request: Request):
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
-    file_name = get_media_file()
+    file_name = get_media_file(username)
     return templates.TemplateResponse(
         "index.html",
         {
@@ -117,8 +142,8 @@ def rate(request: Request, file: str = Form(...), score: int = Form(...)):
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO ratings (username, media, score) VALUES (?, ?, ?)",
-        (username, file, score),
+        "INSERT INTO ratings (username, media, score, rated_at) VALUES (?, ?, ?, ?)",
+        (username, file, score, int(time.time())),
     )
     conn.commit()
     conn.close()
