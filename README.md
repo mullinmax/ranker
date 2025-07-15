@@ -24,7 +24,8 @@ displayed media from 1 to 5 using buttons or the keyboard.
 
 Admin usernames can be supplied via the `ADMIN_USERS` environment variable as a
 comma separated list. When set, an authenticated admin can visit `/admin` to
-manage accounts and upload new media files.
+manage accounts and upload new media files. The upload form accepts multiple
+files so an admin can add several media items in one request.
 
 ## Docker
 
