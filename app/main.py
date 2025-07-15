@@ -141,6 +141,58 @@ def get_media_stats(limit: int = 5) -> tuple[list[tuple[str, float]], list[tuple
     return highest, lowest
 
 
+def get_user_media_stats(
+    username: str, limit: int = 5
+) -> tuple[list[tuple[str, float, float | None]], list[tuple[str, float, float | None]]]:
+    """Return a user's highest and lowest rated media with global averages."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT media, AVG(score) FROM ratings WHERE username=? GROUP BY media",
+        (username,),
+    )
+    user_rows = cur.fetchall()
+    if not user_rows:
+        conn.close()
+        return [], []
+    cur.execute("SELECT media, AVG(score) FROM ratings GROUP BY media")
+    global_rows = dict(cur.fetchall())
+    conn.close()
+    user_rows.sort(key=lambda r: r[1])
+    lowest = user_rows[:limit]
+    highest = user_rows[-limit:][::-1]
+    highest = [
+        (m, u_avg, global_rows.get(m)) for m, u_avg in highest
+    ]
+    lowest = [(m, u_avg, global_rows.get(m)) for m, u_avg in lowest]
+    return highest, lowest
+
+
+def get_global_media_stats_with_user(
+    username: str, limit: int = 5
+) -> tuple[list[tuple[str, float, float | None]], list[tuple[str, float, float | None]]]:
+    """Return global stats with the requesting user's average for each item."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT media, AVG(score) FROM ratings GROUP BY media")
+    global_rows = cur.fetchall()
+    if not global_rows:
+        conn.close()
+        return [], []
+    cur.execute(
+        "SELECT media, AVG(score) FROM ratings WHERE username=? GROUP BY media",
+        (username,),
+    )
+    user_rows = dict(cur.fetchall())
+    conn.close()
+    global_rows.sort(key=lambda r: r[1])
+    lowest = global_rows[:limit]
+    highest = global_rows[-limit:][::-1]
+    highest = [(m, g_avg, user_rows.get(m)) for m, g_avg in highest]
+    lowest = [(m, g_avg, user_rows.get(m)) for m, g_avg in lowest]
+    return highest, lowest
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     username = request.cookies.get("username")
@@ -266,14 +318,17 @@ def stats(request: Request):
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
-    highest, lowest = get_media_stats()
+    global_highest, global_lowest = get_global_media_stats_with_user(username)
+    user_highest, user_lowest = get_user_media_stats(username)
     return templates.TemplateResponse(
         "stats.html",
         {
             "request": request,
             "username": username,
-            "highest": highest,
-            "lowest": lowest,
+            "global_highest": global_highest,
+            "global_lowest": global_lowest,
+            "user_highest": user_highest,
+            "user_lowest": user_lowest,
             "show_back": True,
             "show_admin": is_admin(username),
             "body_class": None,
