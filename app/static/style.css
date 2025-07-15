@@ -61,6 +61,23 @@ img {
   margin-bottom: 1rem;
 }
 
+.media-container {
+  position: relative;
+  display: inline-block;
+}
+
+.last-ranked {
+  position: absolute;
+  bottom: 0.25rem;
+  right: 0.25rem;
+  font-size: 0.8rem;
+  color: #555;
+}
+
+.last-ranked.today {
+  color: green;
+}
+
 .media-preview {
   max-height: 60vh;
   object-fit: contain;

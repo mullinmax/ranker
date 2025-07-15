@@ -24,6 +24,8 @@ displayed media from 1 to 5 using buttons or the keyboard. Media items are
 presented in order of least recently rated for each user, so once an item is
 scored a different file will be shown next. Each rating stores the time it was
 submitted so files can be sorted by when a user last rated them.
+The page also displays when the current media was last rated by the user. If it
+was rated today, the timestamp appears in green.
 
 Admin usernames can be supplied via the `ADMIN_USERS` environment variable as a
 comma separated list. When set, an authenticated admin can visit `/admin` to
