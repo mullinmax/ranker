@@ -84,6 +84,25 @@ def list_users() -> list[str]:
     return rows
 
 
+def get_media_file_summary() -> tuple[int, list[tuple[str, int]]]:
+    """Return total media count and counts by normalized name."""
+    files = [
+        f
+        for f in os.listdir(MEDIA_DIR)
+        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+    ]
+    total = len(files)
+    counts: dict[str, int] = {}
+    for f in files:
+        name, _ = os.path.splitext(f)
+        name = name.lower()
+        name = name.replace("_", "")
+        name = "".join(ch for ch in name if not ch.isdigit())
+        counts[name] = counts.get(name, 0) + 1
+    sorted_counts = sorted(counts.items(), key=lambda x: (-x[1], x[0]))
+    return total, sorted_counts
+
+
 def get_media_files(username: str, count: int) -> list[str]:
     files = [
         f
@@ -364,6 +383,7 @@ def stats(request: Request):
     global_highest, global_lowest = get_global_media_stats_with_user(username)
     user_highest, user_lowest = get_user_media_stats(username)
     elo_ranking = get_elo_rankings()
+    media_total, media_counts = get_media_file_summary()
     return templates.TemplateResponse(
         "stats.html",
         {
@@ -374,6 +394,8 @@ def stats(request: Request):
             "user_highest": user_highest,
             "user_lowest": user_lowest,
             "elo_ranking": elo_ranking,
+            "media_total": media_total,
+            "media_counts": media_counts,
             "show_back": True,
             "show_admin": is_admin(username),
             "show_stats_link": False,
@@ -390,6 +412,8 @@ def admin_panel(request: Request):
         return RedirectResponse("/login")
     users = list_users()
     rating_counts = get_user_rating_counts()
+    media_total, media_counts = get_media_file_summary()
+
     return templates.TemplateResponse(
         "admin.html",
         {
@@ -397,6 +421,8 @@ def admin_panel(request: Request):
             "username": username,
             "users": users,
             "rating_counts": rating_counts,
+            "media_total": media_total,
+            "media_counts": media_counts,
             "build_number": BUILD_NUMBER,
             "show_back": True,
             "show_admin": False,
