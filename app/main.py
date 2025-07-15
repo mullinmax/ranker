@@ -189,13 +189,13 @@ def admin_change_password(
 @app.post("/admin/upload_media")
 def admin_upload_media(
     request: Request,
-    media: UploadFile = File(...),
+    media_files: list[UploadFile] = File(...),
 ):
     username = request.cookies.get("username")
     if not is_admin(username):
         return RedirectResponse("/login")
-    file_path = os.path.join(MEDIA_DIR, media.filename)
-    with open(file_path, "wb") as f:
-        f.write(media.file.read())
+    for media_file in media_files:
+        file_path = os.path.join(MEDIA_DIR, media_file.filename)
+        with open(file_path, "wb") as f:
+            f.write(media_file.file.read())
     return RedirectResponse("/admin", status_code=303)
-
