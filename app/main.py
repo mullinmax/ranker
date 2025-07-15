@@ -67,7 +67,10 @@ def index(request: Request):
     file_name = get_media_file()
     if not file_name:
         return HTMLResponse("No media files found", status_code=404)
-    return templates.TemplateResponse("index.html", {"request": request, "file": file_name})
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "file": file_name, "username": username},
+    )
 
 
 @app.post("/rate")
@@ -120,4 +123,12 @@ def register_post(username: str = Form(...), password: str = Form(...)):
         raise HTTPException(status_code=400, detail="Username exists")
     conn.close()
     return RedirectResponse("/login", status_code=303)
+
+
+@app.get("/logout")
+def logout():
+    """Clear the authentication cookie and redirect to the login page."""
+    response = RedirectResponse("/login")
+    response.delete_cookie("username")
+    return response
 
