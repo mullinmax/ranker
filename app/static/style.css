@@ -135,3 +135,27 @@ img {
     padding: 1rem;
   }
 }
+
+/* Statistics tables */
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+}
+
+.stats-table th,
+.stats-table td {
+  border-bottom: 1px solid #ddd;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.stats-table th {
+  background-color: #f0f0f0;
+}
+
+.thumbnail {
+  max-width: 50px;
+  max-height: 50px;
+  object-fit: contain;
+}

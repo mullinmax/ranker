@@ -1,23 +1,70 @@
 {% extends "base.html" %}
 {% block title %}Statistics{% endblock %}
 {% block content %}
-<h2>Top Rated Media</h2>
-{% if highest %}
-<ul>
-  {% for media, score in highest %}
-  <li>{{ media }} - {{ '%.2f' % score }}</li>
+<h2>Your Highest Rated Media</h2>
+{% if user_highest %}
+<table class="stats-table">
+  <tr><th>Preview</th><th>Media</th><th>Your Avg</th><th>Global Avg</th></tr>
+  {% for media, user_score, global_score in user_highest %}
+  <tr>
+    <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
+    <td>{{ media }}</td>
+    <td>{{ '%.2f' % user_score }}</td>
+    <td>{{ '%.2f' % global_score if global_score is not none else 'N/A' }}</td>
+  </tr>
   {% endfor %}
-</ul>
+</table>
 {% else %}
 <p>No ratings yet.</p>
 {% endif %}
-<h2>Lowest Rated Media</h2>
-{% if lowest %}
-<ul>
-  {% for media, score in lowest %}
-  <li>{{ media }} - {{ '%.2f' % score }}</li>
+
+<h2>Global Highest Rated Media</h2>
+{% if global_highest %}
+<table class="stats-table">
+  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th></tr>
+  {% for media, global_score, user_score in global_highest %}
+  <tr>
+    <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
+    <td>{{ media }}</td>
+    <td>{{ '%.2f' % global_score }}</td>
+    <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+  </tr>
   {% endfor %}
-</ul>
+</table>
+{% else %}
+<p>No ratings yet.</p>
+{% endif %}
+
+<h2>Your Lowest Rated Media</h2>
+{% if user_lowest %}
+<table class="stats-table">
+  <tr><th>Preview</th><th>Media</th><th>Your Avg</th><th>Global Avg</th></tr>
+  {% for media, user_score, global_score in user_lowest %}
+  <tr>
+    <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
+    <td>{{ media }}</td>
+    <td>{{ '%.2f' % user_score }}</td>
+    <td>{{ '%.2f' % global_score if global_score is not none else 'N/A' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No ratings yet.</p>
+{% endif %}
+
+<h2>Global Lowest Rated Media</h2>
+{% if global_lowest %}
+<table class="stats-table">
+  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th></tr>
+  {% for media, global_score, user_score in global_lowest %}
+  <tr>
+    <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
+    <td>{{ media }}</td>
+    <td>{{ '%.2f' % global_score }}</td>
+    <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+  </tr>
+  {% endfor %}
+</table>
 {% else %}
 <p>No ratings yet.</p>
 {% endif %}
