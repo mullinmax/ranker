@@ -18,8 +18,13 @@ function rate(val) {
 </head>
 <body>
 <div class="container">
-<p>Logged in as {{username}} | <a class="link" href="/logout">Logout</a></p>
+<p>
+  Logged in as {{username}} |
+  <a class="link" href="/logout">Logout</a>
+  {% if is_admin %}| <a class="link" href="/admin">Admin</a>{% endif %}
+</p>
 <h1>Rate the media</h1>
+{% if file %}
 <img src="/media/{{file}}" alt="media" />
 <form id="rate-form" action="/rate" method="post">
   <input type="hidden" id="file" name="file" value="{{file}}" />
@@ -28,6 +33,9 @@ function rate(val) {
     <button type="button" onclick="rate({{i}})">{{i}}</button>
   {% endfor %}
 </form>
+{% else %}
+<p>No media files found</p>
+{% endif %}
 </div>
 </body>
 </html>

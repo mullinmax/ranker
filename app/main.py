@@ -93,11 +93,15 @@ def index(request: Request):
     if not username:
         return RedirectResponse("/login")
     file_name = get_media_file()
-    if not file_name:
-        return HTMLResponse("No media files found", status_code=404)
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, "file": file_name, "username": username},
+        {
+            "request": request,
+            "file": file_name,
+            "username": username,
+            "is_admin": is_admin(username),
+        },
+        status_code=200 if file_name else 404,
     )
 
 
