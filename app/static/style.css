@@ -9,12 +9,22 @@ body {
   min-height: 100vh;
 }
 
+body.admin-page {
+  align-items: flex-start;
+}
+
 .container {
   background: white;
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 4px;
   text-align: center;
+}
+
+.admin-container {
+  text-align: left;
+  width: 100%;
+  max-width: 600px;
 }
 
 h1 {
@@ -49,6 +59,24 @@ img {
   max-width: 100%;
   height: auto;
   margin-bottom: 1rem;
+}
+
+.media-preview {
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+.header {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.username {
+  font-weight: bold;
+  margin-right: auto;
 }
 
 .link {

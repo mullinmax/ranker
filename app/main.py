@@ -100,6 +100,10 @@ def index(request: Request):
             "file": file_name,
             "username": username,
             "is_admin": is_admin(username),
+            "show_admin": is_admin(username),
+            "show_back": False,
+            "body_class": None,
+            "container_class": None,
         },
         status_code=200 if file_name else 404,
     )
@@ -123,7 +127,17 @@ def rate(request: Request, file: str = Form(...), score: int = Form(...)):
 
 @app.get("/login", response_class=HTMLResponse)
 def login_get(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(
+        "login.html",
+        {
+            "request": request,
+            "username": None,
+            "body_class": None,
+            "container_class": None,
+            "show_admin": False,
+            "show_back": False,
+        },
+    )
 
 
 @app.post("/login")
@@ -137,7 +151,17 @@ def login_post(username: str = Form(...), password: str = Form(...)):
 
 @app.get("/register", response_class=HTMLResponse)
 def register_get(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(
+        "register.html",
+        {
+            "request": request,
+            "username": None,
+            "body_class": None,
+            "container_class": None,
+            "show_admin": False,
+            "show_back": False,
+        },
+    )
 
 
 @app.post("/register")
@@ -173,7 +197,15 @@ def admin_panel(request: Request):
     users = list_users()
     return templates.TemplateResponse(
         "admin.html",
-        {"request": request, "username": username, "users": users},
+        {
+            "request": request,
+            "username": username,
+            "users": users,
+            "show_back": True,
+            "show_admin": False,
+            "body_class": "admin-page",
+            "container_class": "admin-container",
+        },
     )
 
 

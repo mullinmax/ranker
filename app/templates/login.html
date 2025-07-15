@@ -1,10 +1,6 @@
-<!DOCTYPE html>
-<html>
-<head>
-<link rel="stylesheet" href="/static/style.css" />
-</head>
-<body>
-<div class="container">
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+{% block content %}
 <h1>Login</h1>
 <form method="post">
   <input type="text" id="username" name="username" placeholder="Username" autocomplete="username" required />
@@ -12,6 +8,4 @@
   <input type="submit" value="Login" />
 </form>
 <a class="link" href="/register">Register</a>
-</div>
-</body>
-</html>
+{% endblock %}

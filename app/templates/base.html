@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/static/style.css" />
+<title>{% block title %}Ranker{% endblock %}</title>
+</head>
+<body{% if body_class %} class="{{ body_class }}"{% endif %}>
+<div class="container{% if container_class %} {{ container_class }}{% endif %}">
+{% if username %}
+  <div class="header">
+    <span class="username">{{ username }}</span>
+    {% if show_admin %}
+    <form method="get" action="/admin">
+      <button type="submit">Admin</button>
+    </form>
+    {% endif %}
+    {% if show_back %}
+    <form method="get" action="/">
+      <button type="submit">Back to Ranking</button>
+    </form>
+    {% endif %}
+    <form method="get" action="/logout">
+      <button type="submit">Logout</button>
+    </form>
+  </div>
+{% endif %}
+{% block content %}{% endblock %}
+</div>
+</body>
+</html>
