@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script>
+document.addEventListener('keydown', function(e) {
+  const key = e.key;
+  if (['1','2','3','4','5'].includes(key)) {
+    document.getElementById('score').value = key;
+    document.getElementById('rate-form').submit();
+  }
+});
+function rate(val) {
+  document.getElementById('score').value = val;
+  document.getElementById('rate-form').submit();
+}
+</script>
+</head>
+<body>
+<h1>Rate the media</h1>
+<img src="/media/{{file}}" alt="media" />
+<form id="rate-form" action="/rate" method="post">
+  <input type="hidden" id="file" name="file" value="{{file}}" />
+  <input type="hidden" id="score" name="score" />
+  {% for i in range(1,6) %}
+    <button type="button" onclick="rate({{i}})">{{i}}</button>
+  {% endfor %}
+</form>
+</body>
+</html>
