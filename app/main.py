@@ -152,6 +152,26 @@ def change_user_password(username: str, new_password: str) -> None:
     conn.close()
 
 
+def get_user_rating_counts() -> dict[str, int]:
+    """Return number of rating entries for each user."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT username, COUNT(*) FROM ratings GROUP BY username")
+    rows = cur.fetchall()
+    conn.close()
+    return {row[0]: row[1] for row in rows}
+
+
+def delete_user(username: str) -> None:
+    """Remove a user and all of their rating data."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("DELETE FROM users WHERE username=?", (username,))
+    cur.execute("DELETE FROM ratings WHERE username=?", (username,))
+    conn.commit()
+    conn.close()
+
+
 def get_media_stats(limit: int = 5) -> tuple[list[tuple[str, float]], list[tuple[str, float]]]:
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -389,6 +409,7 @@ def admin_panel(request: Request):
     if not is_admin(username):
         return RedirectResponse("/login")
     users = list_users()
+    rating_counts = get_user_rating_counts()
     media_total, media_counts = get_media_file_summary()
     return templates.TemplateResponse(
         "admin.html",
@@ -396,6 +417,7 @@ def admin_panel(request: Request):
             "request": request,
             "username": username,
             "users": users,
+            "rating_counts": rating_counts,
             "media_total": media_total,
             "media_counts": media_counts,
             "build_number": BUILD_NUMBER,
@@ -418,6 +440,16 @@ def admin_change_password(
     if not is_admin(username):
         return RedirectResponse("/login")
     change_user_password(target_user, new_password)
+    return RedirectResponse("/admin", status_code=303)
+
+
+@app.post("/admin/delete_user")
+def admin_delete_user(request: Request, target_user: str = Form(...)):
+    """Delete a user account and all related ratings."""
+    username = request.cookies.get("username")
+    if not is_admin(username):
+        return RedirectResponse("/login")
+    delete_user(target_user)
     return RedirectResponse("/admin", status_code=303)
 
 

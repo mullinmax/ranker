@@ -2,11 +2,21 @@
 {% block title %}Admin{% endblock %}
 {% block content %}
 <h2>Users</h2>
-<ul>
+<table class="stats-table">
+  <tr><th>User</th><th>Rankings</th><th>Actions</th></tr>
   {% for user in users %}
-    <li>{{ user }}</li>
+  <tr>
+    <td>{{ user }}</td>
+    <td>{{ rating_counts.get(user, 0) }}</td>
+    <td>
+      <form method="post" action="/admin/delete_user" onsubmit="return confirm('Delete user and all data?');">
+        <input type="hidden" name="target_user" value="{{ user }}" />
+        <button type="submit">Delete</button>
+      </form>
+    </td>
+  </tr>
   {% endfor %}
-</ul>
+</table>
 <h2>Change User Password</h2>
 <form method="post" action="/admin/change_password">
   <select name="target_user">
