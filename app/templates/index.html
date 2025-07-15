@@ -19,13 +19,13 @@
 {% endif %}
 <script>
 let selected = [];
-const maxRank = 3;
+const MAX_RANK = 4;
 function toggleRank(el){
   const file = el.dataset.file;
   const idx = selected.indexOf(file);
   if(idx >= 0){
     selected.splice(idx,1);
-  } else if(selected.length < maxRank){
+  } else if(selected.length < MAX_RANK){
     selected.push(file);
   }
   update();
@@ -46,7 +46,14 @@ function update(){
   });
   document.getElementById('order').value = order.join(',');
   document.getElementById('submit-btn').style.display =
-      selected.length >= maxRank ? 'inline-block' : 'none';
+      selected.length >= MAX_RANK ? 'inline-block' : 'none';
 }
+document.addEventListener('keydown', e => {
+  const n = parseInt(e.key);
+  if(n >= 1 && n <= 4){
+    const containers = document.querySelectorAll('.media-container');
+    if(containers[n-1]) toggleRank(containers[n-1]);
+  }
+});
 </script>
 {% endblock %}

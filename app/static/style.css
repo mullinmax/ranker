@@ -95,7 +95,7 @@ img {
 .media-preview {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .header {
@@ -131,6 +131,10 @@ img {
   padding: 0.75rem 1.25rem;
 }
 
+#rate-form {
+  margin-top: 1rem;
+}
+
 @media (max-width: 600px) {
   .container {
     padding: 1rem;
@@ -146,6 +150,9 @@ img {
   #rate-form button {
     font-size: 1.5rem;
     padding: 1rem;
+  }
+  #rate-form {
+    margin-top: 1rem;
   }
 }
 
