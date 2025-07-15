@@ -16,9 +16,11 @@ Run the application:
 uvicorn app.main:app --reload
 ```
 
-The app serves files from a `media` directory. You should mount a folder from
-the host into `/app/media` when running the container. Users can register, log
-in and rate the displayed media from 1 to 5 using buttons or the keyboard.
+The app serves files from a `/ranker-media` directory. You should mount a
+folder from the host into this location when running the container. A SQLite
+database is stored under `/config`, so that directory should also be mounted to
+retain user accounts and ratings. Users can register, log in and rate the
+displayed media from 1 to 5 using buttons or the keyboard.
 
 ## Docker
 
@@ -26,7 +28,10 @@ Build and run with Docker:
 
 ```bash
 docker build -t ranker .
-docker run -p 8000:8000 -v /path/to/media:/app/media ranker
+docker run -p 8000:8000 \
+    -v /path/to/config:/config \
+    -v /path/to/media:/ranker-media \
+    ranker
 ```
 
 ## CI
