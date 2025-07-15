@@ -67,13 +67,30 @@ def list_users() -> list[str]:
     return rows
 
 
-def get_media_file() -> str | None:
+def get_media_file(username: str) -> str | None:
     files = [
         f
         for f in os.listdir(MEDIA_DIR)
         if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
-    return sorted(files)[0] if files else None
+    if not files:
+        return None
+
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    scored_files: list[tuple[int, str]] = []
+    for f in files:
+        cur.execute(
+            "SELECT MAX(id) FROM ratings WHERE username=? AND media=?",
+            (username, f),
+        )
+        row = cur.fetchone()
+        last_id = row[0] if row and row[0] is not None else -1
+        scored_files.append((last_id, f))
+    conn.close()
+
+    scored_files.sort(key=lambda x: (x[0], x[1]))
+    return scored_files[0][1]
 
 
 def change_user_password(username: str, new_password: str) -> None:
@@ -92,7 +109,7 @@ def index(request: Request):
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
-    file_name = get_media_file()
+    file_name = get_media_file(username)
     return templates.TemplateResponse(
         "index.html",
         {
