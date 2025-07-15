@@ -2,3 +2,4 @@ fastapi
 uvicorn
 Jinja2
 python-multipart
+Pillow
