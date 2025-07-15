@@ -12,9 +12,10 @@ from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-# Ensure directories exist even if mounted at runtime
-MEDIA_DIR = "/ranker-media"
-CONFIG_DIR = "/config"
+# Ensure directories exist even if mounted at runtime. The locations can be
+# configured via the environment so tests can override them.
+MEDIA_DIR = os.environ.get("MEDIA_DIR", "/ranker-media")
+CONFIG_DIR = os.environ.get("CONFIG_DIR", "/config")
 os.makedirs(MEDIA_DIR, exist_ok=True)
 os.makedirs(CONFIG_DIR, exist_ok=True)
 app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
