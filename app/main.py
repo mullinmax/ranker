@@ -127,6 +127,20 @@ def change_user_password(username: str, new_password: str) -> None:
     conn.close()
 
 
+def get_media_stats(limit: int = 5) -> tuple[list[tuple[str, float]], list[tuple[str, float]]]:
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT media, AVG(score) FROM ratings GROUP BY media")
+    rows = cur.fetchall()
+    conn.close()
+    if not rows:
+        return [], []
+    rows.sort(key=lambda r: r[1])
+    lowest = rows[:limit]
+    highest = rows[-limit:][::-1]
+    return highest, lowest
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     username = request.cookies.get("username")
@@ -145,7 +159,9 @@ def index(request: Request):
             suffix = "nd"
         elif dt.day % 10 == 3 and dt.day != 13:
             suffix = "rd"
-        last_str = f"{dt.day}{suffix} {dt.strftime('%b %Y %-I:%M%p').lower()}"
+        date_str = dt.strftime('%b %Y %-I:%M%p')
+        date_str = date_str.replace('AM', 'am').replace('PM', 'pm')
+        last_str = f"{dt.day}{suffix} {date_str}"
         is_today = dt.date() == datetime.date.today()
     return templates.TemplateResponse(
         "index.html",
@@ -243,6 +259,27 @@ def logout():
     response = RedirectResponse("/login")
     response.delete_cookie("username")
     return response
+
+
+@app.get("/stats", response_class=HTMLResponse)
+def stats(request: Request):
+    username = request.cookies.get("username")
+    if not username:
+        return RedirectResponse("/login")
+    highest, lowest = get_media_stats()
+    return templates.TemplateResponse(
+        "stats.html",
+        {
+            "request": request,
+            "username": username,
+            "highest": highest,
+            "lowest": lowest,
+            "show_back": True,
+            "show_admin": is_admin(username),
+            "body_class": None,
+            "container_class": None,
+        },
+    )
 
 
 @app.get("/admin", response_class=HTMLResponse)
