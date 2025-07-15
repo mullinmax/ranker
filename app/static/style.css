@@ -87,3 +87,9 @@ img {
 .link:hover {
   text-decoration: underline;
 }
+
+.build-info {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #666;
+}

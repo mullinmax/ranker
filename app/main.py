@@ -23,6 +23,8 @@ ADMIN_USERS = {
     u.strip() for u in os.environ.get("ADMIN_USERS", "").split(",") if u.strip()
 }
 
+BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "dev")
+
 DATABASE = os.path.join(CONFIG_DIR, "database.db")
 
 
@@ -226,6 +228,7 @@ def admin_panel(request: Request):
             "request": request,
             "username": username,
             "users": users,
+            "build_number": BUILD_NUMBER,
             "show_back": True,
             "show_admin": False,
             "body_class": "admin-page",
