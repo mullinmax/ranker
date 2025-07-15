@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+<div class="container">
+<p>Logged in as {{username}} | <a class="link" href="/logout">Logout</a></p>
+<h1>Admin Panel</h1>
+<h2>Users</h2>
+<ul>
+  {% for user in users %}
+    <li>{{ user }}</li>
+  {% endfor %}
+</ul>
+<h2>Change User Password</h2>
+<form method="post" action="/admin/change_password">
+  <select name="target_user">
+    {% for user in users %}
+    <option value="{{ user }}">{{ user }}</option>
+    {% endfor %}
+  </select>
+  <input type="password" name="new_password" placeholder="New password" required />
+  <input type="submit" value="Change Password" />
+</form>
+<h2>Upload Media</h2>
+<form method="post" action="/admin/upload_media" enctype="multipart/form-data">
+  <input type="file" name="media" required />
+  <input type="submit" value="Upload" />
+</form>
+</div>
+</body>
+</html>
