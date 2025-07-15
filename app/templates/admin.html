@@ -18,9 +18,25 @@
   <input type="submit" value="Change Password" />
 </form>
 <h2>Upload Media</h2>
-<form method="post" action="/admin/upload_media" enctype="multipart/form-data">
+<form id="upload-form" method="post" action="/admin/upload_media" enctype="multipart/form-data">
   <input type="file" name="media_files" multiple required />
   <input type="submit" value="Upload" />
 </form>
+<script>
+const form = document.getElementById('upload-form');
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = form.querySelector('input[type="file"]');
+  const files = Array.from(input.files);
+  const batchSize = 10;
+  for (let i = 0; i < files.length; i += batchSize) {
+    const chunk = files.slice(i, i + batchSize);
+    const fd = new FormData();
+    chunk.forEach(f => fd.append('media_files', f));
+    await fetch(form.action, {method: 'POST', body: fd});
+  }
+  window.location.reload();
+});
+</script>
 <p class="build-info">Build {{ build_number }}</p>
 {% endblock %}
