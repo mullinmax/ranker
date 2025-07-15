@@ -22,7 +22,8 @@ database is stored under `/config`, so that directory should also be mounted to
 retain user accounts and ratings. Users can register, log in and rate the
 displayed media from 1 to 5 using buttons or the keyboard. Media items are
 presented in order of least recently rated for each user, so once an item is
-scored a different file will be shown next.
+scored a different file will be shown next. Each rating stores the time it was
+submitted so files can be sorted by when a user last rated them.
 
 Admin usernames can be supplied via the `ADMIN_USERS` environment variable as a
 comma separated list. When set, an authenticated admin can visit `/admin` to
