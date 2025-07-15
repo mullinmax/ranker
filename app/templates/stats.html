@@ -5,9 +5,9 @@
 {% if elo_ranking %}
 <table class="stats-table">
   <tr><th>#</th><th>Preview</th><th>Media</th><th>ELO</th></tr>
-  {% for idx, (media, elo) in enumerate(elo_ranking, start=1) %}
+  {% for media, elo in elo_ranking %}
   <tr>
-    <td>{{ idx }}</td>
+    <td>{{ loop.index }}</td>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
     <td>{{ '%.1f' % elo }}</td>
