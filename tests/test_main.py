@@ -3,6 +3,12 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 import os
 import sqlite3
+import tempfile
+
+# Ensure the app uses a writable location during import
+_base = tempfile.mkdtemp()
+os.environ.setdefault("MEDIA_DIR", os.path.join(_base, "media"))
+os.environ.setdefault("CONFIG_DIR", os.path.join(_base, "config"))
 
 import pytest
 from fastapi.testclient import TestClient
