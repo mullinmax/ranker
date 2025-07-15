@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<link rel="stylesheet" href="/static/style.css" />
 <script>
 document.addEventListener('keydown', function(e) {
   const key = e.key;
@@ -16,6 +17,7 @@ function rate(val) {
 </script>
 </head>
 <body>
+<div class="container">
 <h1>Rate the media</h1>
 <img src="/media/{{file}}" alt="media" />
 <form id="rate-form" action="/rate" method="post">
@@ -25,5 +27,6 @@ function rate(val) {
     <button type="button" onclick="rate({{i}})">{{i}}</button>
   {% endfor %}
 </form>
+</div>
 </body>
 </html>
