@@ -39,4 +39,11 @@ form.addEventListener('submit', async (e) => {
 });
 </script>
 <p class="build-info">Build {{ build_number }}</p>
+<h2>Media Summary</h2>
+<p>Total files: {{ media_total }}</p>
+<ul>
+  {% for name, count in media_counts %}
+  <li>{{ name }}: {{ count }}</li>
+  {% endfor %}
+</ul>
 {% endblock %}
