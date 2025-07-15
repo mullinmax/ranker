@@ -2,7 +2,12 @@
 {% block title %}Rank Media{% endblock %}
 {% block content %}
 {% if file %}
-<img class="media-preview" src="/media/{{file}}" alt="media" />
+<div class="media-container">
+  <img class="media-preview" src="/media/{{file}}" alt="media" />
+  {% if last_ranked %}
+  <span class="last-ranked{% if last_ranked_today %} today{% endif %}">last ranked: {{ last_ranked }}</span>
+  {% endif %}
+</div>
 <form id="rate-form" action="/rate" method="post">
   <input type="hidden" id="file" name="file" value="{{file}}" />
   <input type="hidden" id="score" name="score" />

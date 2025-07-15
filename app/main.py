@@ -2,6 +2,7 @@ import hashlib
 import os
 import sqlite3
 import time
+import datetime
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -101,6 +102,18 @@ def get_media_file(username: str) -> str | None:
     return scored_files[0][1]
 
 
+def get_last_rating_time(username: str, media: str) -> int | None:
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT MAX(rated_at) FROM ratings WHERE username=? AND media=?",
+        (username, media),
+    )
+    row = cur.fetchone()
+    conn.close()
+    return row[0] if row and row[0] is not None else None
+
+
 def change_user_password(username: str, new_password: str) -> None:
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -118,6 +131,20 @@ def index(request: Request):
     if not username:
         return RedirectResponse("/login")
     file_name = get_media_file(username)
+    last_ts = get_last_rating_time(username, file_name) if file_name else None
+    last_str = None
+    is_today = False
+    if last_ts:
+        dt = datetime.datetime.fromtimestamp(last_ts)
+        suffix = "th"
+        if dt.day % 10 == 1 and dt.day != 11:
+            suffix = "st"
+        elif dt.day % 10 == 2 and dt.day != 12:
+            suffix = "nd"
+        elif dt.day % 10 == 3 and dt.day != 13:
+            suffix = "rd"
+        last_str = f"{dt.day}{suffix} {dt.strftime('%b %Y %-I:%M%p').lower()}"
+        is_today = dt.date() == datetime.date.today()
     return templates.TemplateResponse(
         "index.html",
         {
@@ -129,6 +156,8 @@ def index(request: Request):
             "show_back": False,
             "body_class": None,
             "container_class": None,
+            "last_ranked": last_str,
+            "last_ranked_today": is_today,
         },
         status_code=200 if file_name else 404,
     )
