@@ -1,7 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-<link rel="stylesheet" href="/static/style.css" />
+{% extends "base.html" %}
+{% block title %}Rank Media{% endblock %}
+{% block content %}
+{% if file %}
+<img class="media-preview" src="/media/{{file}}" alt="media" />
+<form id="rate-form" action="/rate" method="post">
+  <input type="hidden" id="file" name="file" value="{{file}}" />
+  <input type="hidden" id="score" name="score" />
+  {% for i in range(1,6) %}
+    <button type="button" onclick="rate({{i}})">{{i}}</button>
+  {% endfor %}
+</form>
+{% else %}
+<p>No media files found</p>
+{% endif %}
 <script>
 document.addEventListener('keydown', function(e) {
   const key = e.key;
@@ -15,27 +26,4 @@ function rate(val) {
   document.getElementById('rate-form').submit();
 }
 </script>
-</head>
-<body>
-<div class="container">
-<p>
-  Logged in as {{username}} |
-  <a class="link" href="/logout">Logout</a>
-  {% if is_admin %}| <a class="link" href="/admin">Admin</a>{% endif %}
-</p>
-<h1>Rate the media</h1>
-{% if file %}
-<img src="/media/{{file}}" alt="media" />
-<form id="rate-form" action="/rate" method="post">
-  <input type="hidden" id="file" name="file" value="{{file}}" />
-  <input type="hidden" id="score" name="score" />
-  {% for i in range(1,6) %}
-    <button type="button" onclick="rate({{i}})">{{i}}</button>
-  {% endfor %}
-</form>
-{% else %}
-<p>No media files found</p>
-{% endif %}
-</div>
-</body>
-</html>
+{% endblock %}
