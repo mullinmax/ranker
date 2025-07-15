@@ -4,6 +4,7 @@ sys.path.append(str(Path(__file__).resolve().parents[1]))
 import os
 import sqlite3
 import tempfile
+from PIL import Image
 
 # Ensure the app uses a writable location during import
 _base = tempfile.mkdtemp()
@@ -103,3 +104,26 @@ def test_admin_panel(admin_client: TestClient):
     )
     assert resp.status_code == 303
     assert os.path.exists(os.path.join(main.MEDIA_DIR, "uploaded.txt"))
+
+
+def test_remove_duplicates_endpoint(admin_client: TestClient):
+    admin_client.post("/register", data={"username": "admin", "password": "x"}, follow_redirects=False)
+    admin_client.post("/login", data={"username": "admin", "password": "x"}, follow_redirects=False)
+
+    img1 = Image.new("RGB", (1, 1), color="red")
+    img2 = Image.new("RGB", (1, 1), color="red")
+    img3 = Image.new("RGB", (1, 1), color="blue")
+
+    path1 = Path(main.MEDIA_DIR) / "a.png"
+    path2 = Path(main.MEDIA_DIR) / "b.png"
+    path3 = Path(main.MEDIA_DIR) / "c.png"
+    img1.save(path1)
+    img2.save(path2)
+    img3.save(path3)
+
+    resp = admin_client.post("/admin/remove_duplicates", follow_redirects=False)
+    assert resp.status_code == 303
+
+    remaining = [path1.exists(), path2.exists()]
+    assert remaining.count(True) == 1
+    assert path3.exists()
