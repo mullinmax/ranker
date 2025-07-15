@@ -8,14 +8,17 @@ from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
 
-# Ensure media directory exists even if mounted at runtime
-os.makedirs("media", exist_ok=True)
-app.mount("/media", StaticFiles(directory="media"), name="media")
+# Ensure directories exist even if mounted at runtime
+MEDIA_DIR = "/ranker-media"
+CONFIG_DIR = "/config"
+os.makedirs(MEDIA_DIR, exist_ok=True)
+os.makedirs(CONFIG_DIR, exist_ok=True)
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
-DATABASE = "database.db"
+DATABASE = os.path.join(CONFIG_DIR, "database.db")
 
 
 def init_db():
@@ -48,7 +51,11 @@ def verify_user(username: str, password: str) -> bool:
 
 
 def get_media_file() -> str | None:
-    files = [f for f in os.listdir("media") if os.path.isfile(os.path.join("media", f))]
+    files = [
+        f
+        for f in os.listdir(MEDIA_DIR)
+        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+    ]
     return sorted(files)[0] if files else None
 
 
