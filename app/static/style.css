@@ -3,14 +3,7 @@ body {
   background-color: #f4f4f4;
   margin: 0;
   padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-}
-
-body.admin-page {
-  align-items: flex-start;
 }
 
 .container {
@@ -20,13 +13,15 @@ body.admin-page {
   border-radius: 4px;
   text-align: center;
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .admin-container {
   text-align: left;
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 h1 {
@@ -65,15 +60,17 @@ img {
 
 .media-container {
   position: relative;
-  display: inline-block;
-  flex: 1 1 calc(45% - 1rem);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  aspect-ratio: 4 / 3;
+  width: 100%;
 }
 
 .media-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
   gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 }
 
 .medal {
@@ -96,9 +93,9 @@ img {
 }
 
 .media-preview {
-  max-height: 60vh;
-  object-fit: contain;
   width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .header {
@@ -144,7 +141,7 @@ img {
     width: 100%;
   }
   .media-preview {
-    max-height: 70vh;
+    height: 100%;
   }
   #rate-form button {
     font-size: 1.5rem;
