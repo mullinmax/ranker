@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Statistics{% endblock %}
+{% block content %}
+<h2>Top Rated Media</h2>
+{% if highest %}
+<ul>
+  {% for media, score in highest %}
+  <li>{{ media }} - {{ '%.2f' % score }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No ratings yet.</p>
+{% endif %}
+<h2>Lowest Rated Media</h2>
+{% if lowest %}
+<ul>
+  {% for media, score in lowest %}
+  <li>{{ media }} - {{ '%.2f' % score }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p>No ratings yet.</p>
+{% endif %}
+{% endblock %}
