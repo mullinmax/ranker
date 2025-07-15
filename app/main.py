@@ -11,6 +11,7 @@ app = FastAPI()
 # Ensure media directory exists even if mounted at runtime
 os.makedirs("media", exist_ok=True)
 app.mount("/media", StaticFiles(directory="media"), name="media")
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 templates = Jinja2Templates(directory="app/templates")
 
