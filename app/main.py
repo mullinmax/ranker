@@ -29,8 +29,8 @@ ADMIN_USERS = {
 
 BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "dev")
 
-# Number of media items to display per ranking round
-NUM_MEDIA = int(os.environ.get("NUM_MEDIA", 4))
+# Number of media items to display per ranking round (fixed)
+NUM_MEDIA = 4
 
 DATABASE = os.path.join(CONFIG_DIR, "database.db")
 
