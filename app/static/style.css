@@ -66,6 +66,21 @@ img {
 .media-container {
   position: relative;
   display: inline-block;
+  flex: 1 1 calc(45% - 1rem);
+}
+
+.media-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.medal {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  font-size: 2rem;
 }
 
 .last-ranked {
@@ -83,6 +98,7 @@ img {
 .media-preview {
   max-height: 60vh;
   object-fit: contain;
+  width: 100%;
 }
 
 .header {

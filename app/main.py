@@ -26,6 +26,9 @@ ADMIN_USERS = {
 
 BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "dev")
 
+# Number of media items to display per ranking round
+NUM_MEDIA = int(os.environ.get("NUM_MEDIA", 4))
+
 DATABASE = os.path.join(CONFIG_DIR, "database.db")
 
 
@@ -37,6 +40,9 @@ def init_db():
     )
     cur.execute(
         "CREATE TABLE IF NOT EXISTS ratings (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, media TEXT, score INTEGER, rated_at INTEGER)"
+    )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS elo (media TEXT PRIMARY KEY, rating REAL)"
     )
     # Ensure rated_at column exists if database was created with older schema
     cur.execute("PRAGMA table_info(ratings)")
@@ -76,14 +82,14 @@ def list_users() -> list[str]:
     return rows
 
 
-def get_media_file(username: str) -> str | None:
+def get_media_files(username: str, count: int) -> list[str]:
     files = [
         f
         for f in os.listdir(MEDIA_DIR)
         if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
     if not files:
-        return None
+        return []
 
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -101,7 +107,7 @@ def get_media_file(username: str) -> str | None:
         scored_files.append((last_time, f))
 
     scored_files.sort(key=lambda x: (x[0], x[1]))
-    return scored_files[0][1]
+    return [f for _, f in scored_files[:count]]
 
 
 def get_last_rating_time(username: str, media: str) -> int | None:
@@ -136,8 +142,8 @@ def get_media_stats(limit: int = 5) -> tuple[list[tuple[str, float]], list[tuple
     if not rows:
         return [], []
     rows.sort(key=lambda r: r[1])
-    lowest = rows[:limit]
-    highest = rows[-limit:][::-1]
+    highest = rows[:limit]
+    lowest = rows[-limit:][::-1]
     return highest, lowest
 
 
@@ -159,8 +165,8 @@ def get_user_media_stats(
     global_rows = dict(cur.fetchall())
     conn.close()
     user_rows.sort(key=lambda r: r[1])
-    lowest = user_rows[:limit]
-    highest = user_rows[-limit:][::-1]
+    highest = user_rows[:limit]
+    lowest = user_rows[-limit:][::-1]
     highest = [
         (m, u_avg, global_rows.get(m)) for m, u_avg in highest
     ]
@@ -186,11 +192,21 @@ def get_global_media_stats_with_user(
     user_rows = dict(cur.fetchall())
     conn.close()
     global_rows.sort(key=lambda r: r[1])
-    lowest = global_rows[:limit]
-    highest = global_rows[-limit:][::-1]
+    highest = global_rows[:limit]
+    lowest = global_rows[-limit:][::-1]
     highest = [(m, g_avg, user_rows.get(m)) for m, g_avg in highest]
     lowest = [(m, g_avg, user_rows.get(m)) for m, g_avg in lowest]
     return highest, lowest
+
+
+def get_elo_rankings(limit: int = 20) -> list[tuple[str, float]]:
+    """Return media items ordered by ELO rating descending."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT media, rating FROM elo ORDER BY rating DESC LIMIT ?", (limit,))
+    rows = cur.fetchall()
+    conn.close()
+    return rows
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -198,52 +214,57 @@ def index(request: Request):
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
-    file_name = get_media_file(username)
-    last_ts = get_last_rating_time(username, file_name) if file_name else None
-    last_str = None
-    is_today = False
-    if last_ts:
-        dt = datetime.datetime.fromtimestamp(last_ts)
-        suffix = "th"
-        if dt.day % 10 == 1 and dt.day != 11:
-            suffix = "st"
-        elif dt.day % 10 == 2 and dt.day != 12:
-            suffix = "nd"
-        elif dt.day % 10 == 3 and dt.day != 13:
-            suffix = "rd"
-        date_str = dt.strftime('%b %Y %-I:%M%p')
-        date_str = date_str.replace('AM', 'am').replace('PM', 'pm')
-        last_str = f"{dt.day}{suffix} {date_str}"
-        is_today = dt.date() == datetime.date.today()
+    file_names = get_media_files(username, NUM_MEDIA)
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "file": file_name,
+            "files": file_names,
             "username": username,
             "is_admin": is_admin(username),
             "show_admin": is_admin(username),
             "show_back": False,
+            "show_stats_link": True,
             "body_class": None,
             "container_class": None,
-            "last_ranked": last_str,
-            "last_ranked_today": is_today,
         },
-        status_code=200 if file_name else 404,
+        status_code=200 if file_names else 404,
     )
 
 
 @app.post("/rate")
-def rate(request: Request, file: str = Form(...), score: int = Form(...)):
+def rate(request: Request, order: str = Form(...)):
+    """Record the ranking order for the provided files."""
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
+    files = [f for f in order.split(',') if f]
+    ts = int(time.time())
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO ratings (username, media, score, rated_at) VALUES (?, ?, ?, ?)",
-        (username, file, score, int(time.time())),
-    )
+    for rank, file in enumerate(files, start=1):
+        cur.execute(
+            "INSERT INTO ratings (username, media, score, rated_at) VALUES (?, ?, ?, ?)",
+            (username, file, rank, ts),
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO elo (media, rating) VALUES (?, ?)", (file, 1000)
+        )
+    K = 32
+    for i in range(len(files)):
+        for j in range(i + 1, len(files)):
+            winner = files[i]
+            loser = files[j]
+            cur.execute("SELECT rating FROM elo WHERE media=?", (winner,))
+            Ra = cur.fetchone()[0]
+            cur.execute("SELECT rating FROM elo WHERE media=?", (loser,))
+            Rb = cur.fetchone()[0]
+            Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
+            Eb = 1 / (1 + 10 ** ((Ra - Rb) / 400))
+            Ra_new = Ra + K * (1 - Ea)
+            Rb_new = Rb + K * (0 - Eb)
+            cur.execute("UPDATE elo SET rating=? WHERE media=?", (Ra_new, winner))
+            cur.execute("UPDATE elo SET rating=? WHERE media=?", (Rb_new, loser))
     conn.commit()
     conn.close()
     return RedirectResponse("/", status_code=303)
@@ -320,6 +341,7 @@ def stats(request: Request):
         return RedirectResponse("/login")
     global_highest, global_lowest = get_global_media_stats_with_user(username)
     user_highest, user_lowest = get_user_media_stats(username)
+    elo_ranking = get_elo_rankings()
     return templates.TemplateResponse(
         "stats.html",
         {
@@ -329,8 +351,10 @@ def stats(request: Request):
             "global_lowest": global_lowest,
             "user_highest": user_highest,
             "user_lowest": user_lowest,
+            "elo_ranking": elo_ranking,
             "show_back": True,
             "show_admin": is_admin(username),
+            "show_stats_link": False,
             "body_class": None,
             "container_class": None,
         },
@@ -352,6 +376,7 @@ def admin_panel(request: Request):
             "build_number": BUILD_NUMBER,
             "show_back": True,
             "show_admin": False,
+            "show_stats_link": True,
             "body_class": "admin-page",
             "container_class": "admin-container",
         },

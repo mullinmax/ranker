@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Statistics{% endblock %}
 {% block content %}
+<h2>Global ELO Ranking</h2>
+{% if elo_ranking %}
+<table class="stats-table">
+  <tr><th>#</th><th>Preview</th><th>Media</th><th>ELO</th></tr>
+  {% for idx, (media, elo) in enumerate(elo_ranking, start=1) %}
+  <tr>
+    <td>{{ idx }}</td>
+    <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
+    <td>{{ media }}</td>
+    <td>{{ '%.1f' % elo }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No rankings yet.</p>
+{% endif %}
 <h2>Your Highest Rated Media</h2>
 {% if user_highest %}
 <table class="stats-table">
