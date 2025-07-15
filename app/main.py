@@ -3,7 +3,9 @@ import os
 import sqlite3
 import time
 import datetime
+import random
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
+from PIL import Image
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -440,4 +442,47 @@ def admin_upload_media(
         file_path = os.path.join(MEDIA_DIR, media_file.filename)
         with open(file_path, "wb") as f:
             f.write(media_file.file.read())
+    return RedirectResponse("/admin", status_code=303)
+
+
+def remove_duplicate_images() -> int:
+    """Remove duplicate images based on their pixel data and return count removed."""
+    files = [
+        f
+        for f in os.listdir(MEDIA_DIR)
+        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+    ]
+    hashes: dict[str, list[str]] = {}
+    for fname in files:
+        path = os.path.join(MEDIA_DIR, fname)
+        try:
+            with Image.open(path) as img:
+                img = img.convert("RGB")
+                h = hashlib.sha256(img.tobytes()).hexdigest()
+        except Exception:
+            # skip non-image files
+            continue
+        hashes.setdefault(h, []).append(fname)
+
+    removed = 0
+    for dup_files in hashes.values():
+        if len(dup_files) > 1:
+            random.shuffle(dup_files)
+            dup_files.pop()  # keep one
+            for fname in dup_files:
+                try:
+                    os.remove(os.path.join(MEDIA_DIR, fname))
+                    removed += 1
+                except FileNotFoundError:
+                    pass
+    return removed
+
+
+@app.post("/admin/remove_duplicates")
+def admin_remove_duplicates(request: Request):
+    """Endpoint for removing duplicate media files."""
+    username = request.cookies.get("username")
+    if not is_admin(username):
+        return RedirectResponse("/login")
+    remove_duplicate_images()
     return RedirectResponse("/admin", status_code=303)
