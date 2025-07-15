@@ -1,4 +1,6 @@
 FROM python:3.10-slim
+ARG BUILD_NUMBER=dev
+ENV BUILD_NUMBER=$BUILD_NUMBER
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
