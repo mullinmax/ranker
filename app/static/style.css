@@ -92,6 +92,8 @@ img {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   height: calc(100vh - 140px);
+  width: min(100vw, calc((100vh - 140px) * 4 / 3));
+  margin: 0 auto;
 }
 
 .medal {
@@ -181,6 +183,12 @@ img {
     border-radius: 0;
   }
   .admin-container {
+    width: 100%;
+  }
+  .media-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: none;
+    height: auto;
     width: 100%;
   }
   .media-preview {
