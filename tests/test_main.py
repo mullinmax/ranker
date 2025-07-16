@@ -50,7 +50,7 @@ def test_register_and_login(client: TestClient):
     resp = client.post("/login", data={"username": "alice", "password": "secret"}, follow_redirects=False)
     assert resp.status_code == 303
     assert resp.headers["location"] == "/"
-    assert "username=alice" in resp.headers.get("set-cookie", "")
+    assert "session=" in resp.headers.get("set-cookie", "")
 
 
 def test_rating_and_stats(client: TestClient, tmp_path: Path):

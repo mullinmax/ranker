@@ -7,6 +7,7 @@ import base64
 import io
 import json
 import requests
+from itsdangerous import BadSignature, URLSafeSerializer
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from PIL import Image
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -31,6 +32,10 @@ ADMIN_USERS = {
 }
 
 BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "dev")
+
+# Session cookie signing
+SECRET_KEY = os.environ.get("SECRET_KEY", "devkey")
+serializer = URLSafeSerializer(SECRET_KEY)
 
 # Number of media items to display per ranking round (fixed)
 NUM_MEDIA = 4
@@ -96,6 +101,17 @@ def is_admin(username: str | None) -> bool:
 
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def get_username(request: Request) -> str | None:
+    """Return the username from the signed session cookie if valid."""
+    token = request.cookies.get("session")
+    if not token:
+        return None
+    try:
+        return serializer.loads(token)
+    except BadSignature:
+        return None
 
 
 def verify_user(username: str, password: str) -> bool:
@@ -425,7 +441,7 @@ def get_name_group_elo_stats() -> (
 
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not username:
         return RedirectResponse("/login")
     file_names = get_media_files(username, NUM_MEDIA)
@@ -449,7 +465,7 @@ def index(request: Request):
 @app.post("/rate")
 def rate(request: Request, order: str = Form(...)):
     """Record the ranking order for the provided files."""
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not username:
         return RedirectResponse("/login")
     files = [f for f in order.split(",") if f]
@@ -559,7 +575,8 @@ def login_get(request: Request):
 def login_post(username: str = Form(...), password: str = Form(...)):
     if verify_user(username, password):
         response = RedirectResponse("/", status_code=303)
-        response.set_cookie("username", username)
+        token = serializer.dumps(username)
+        response.set_cookie("session", token, httponly=True)
         return response
     return HTMLResponse("Invalid credentials", status_code=400)
 
@@ -600,13 +617,13 @@ def register_post(username: str = Form(...), password: str = Form(...)):
 def logout():
     """Clear the authentication cookie and redirect to the login page."""
     response = RedirectResponse("/login")
-    response.delete_cookie("username")
+    response.delete_cookie("session")
     return response
 
 
 @app.get("/stats", response_class=HTMLResponse)
 def stats(request: Request):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not username:
         return RedirectResponse("/login")
     global_highest, global_lowest = get_global_media_stats_with_user(username)
@@ -640,7 +657,7 @@ def stats(request: Request):
 
 @app.get("/admin", response_class=HTMLResponse)
 def admin_panel(request: Request):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     users = list_users()
@@ -676,7 +693,7 @@ def admin_change_password(
     target_user: str = Form(...),
     new_password: str = Form(...),
 ):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     change_user_password(target_user, new_password)
@@ -686,7 +703,7 @@ def admin_change_password(
 @app.post("/admin/delete_user")
 def admin_delete_user(request: Request, target_user: str = Form(...)):
     """Delete a user account and all related ratings."""
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     delete_user(target_user)
@@ -698,7 +715,7 @@ def admin_upload_media(
     request: Request,
     media_files: list[UploadFile] = File(...),
 ):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     for media_file in media_files:
@@ -715,7 +732,7 @@ def admin_set_ollama(
     api_key: str = Form(""),
     model: str = Form(...),
 ):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     save_ollama_config(url, api_key, model)
@@ -724,7 +741,7 @@ def admin_set_ollama(
 
 @app.post("/admin/generate_embeddings")
 def admin_generate_embeddings(request: Request):
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     url, api_key, model = load_ollama_config()
@@ -768,7 +785,7 @@ def remove_duplicate_images() -> int:
 @app.post("/admin/remove_duplicates")
 def admin_remove_duplicates(request: Request):
     """Endpoint for removing duplicate media files."""
-    username = request.cookies.get("username")
+    username = get_username(request)
     if not is_admin(username):
         return RedirectResponse("/login")
     remove_duplicate_images()
