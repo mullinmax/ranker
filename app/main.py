@@ -103,9 +103,7 @@ def list_users() -> list[str]:
 def get_media_file_summary() -> tuple[int, list[tuple[str, int]]]:
     """Return total media count and counts by normalized name."""
     files = [
-        f
-        for f in os.listdir(MEDIA_DIR)
-        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+        f for f in os.listdir(MEDIA_DIR) if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
     total = len(files)
     counts: dict[str, int] = {}
@@ -122,9 +120,7 @@ def get_media_file_summary() -> tuple[int, list[tuple[str, int]]]:
 def get_media_files(username: str, count: int) -> list[str]:
     """Return a shuffled list of media files for ranking."""
     files = [
-        f
-        for f in os.listdir(MEDIA_DIR)
-        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+        f for f in os.listdir(MEDIA_DIR) if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
     if not files:
         return []
@@ -209,9 +205,12 @@ def delete_user(username: str) -> None:
     conn.commit()
     conn.close()
 
+
 def get_user_media_stats(
     username: str, limit: int = 5
-) -> tuple[list[tuple[str, float, float, int, int]], list[tuple[str, float, float, int, int]]]:
+) -> tuple[
+    list[tuple[str, float, float, int, int]], list[tuple[str, float, float, int, int]]
+]:
     """Return a user's highest and lowest ELO rated media with global ELO."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -233,48 +232,51 @@ def get_user_media_stats(
     return highest, lowest
 
 
-def get_global_media_stats_with_user(
-    username: str, limit: int = 5
-) -> tuple[list[tuple[str, float, float | None, int, int]], list[tuple[str, float, float | None, int, int]]]:
-    """Return global stats with the requesting user's average for each item."""
+def get_global_media_stats_with_user(username: str, limit: int = 5) -> tuple[
+    list[tuple[str, float, float | None, int, int]],
+    list[tuple[str, float, float | None, int, int]],
+]:
+    """Return global ELO stats with the requesting user's ELO for each item."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    query_global = """
-        SELECT m.filename, AVG(score), COUNT(*) FROM (
-            SELECT first_id AS media_id, 1 AS score FROM rankings
-            UNION ALL SELECT second_id, 2 FROM rankings
-            UNION ALL SELECT third_id, 3 FROM rankings
-            UNION ALL SELECT fourth_id, 4 FROM rankings
-        ) r JOIN media m ON m.id = r.media_id
-        GROUP BY m.filename
-    """
-    cur.execute(query_global)
+    cur.execute("SELECT filename, elo, rating_count FROM media")
     global_rows = cur.fetchall()
     if not global_rows:
         conn.close()
         return [], []
-    query_user = """
-        SELECT m.filename, AVG(score), COUNT(*) FROM (
-            SELECT first_id AS media_id, 1 AS score FROM rankings WHERE username=?
-            UNION ALL SELECT second_id, 2 FROM rankings WHERE username=?
-            UNION ALL SELECT third_id, 3 FROM rankings WHERE username=?
-            UNION ALL SELECT fourth_id, 4 FROM rankings WHERE username=?
-        ) r JOIN media m ON m.id = r.media_id
-        GROUP BY m.filename
-    """
-    cur.execute(query_user, (username, username, username, username))
+    cur.execute(
+        """
+        SELECT m.filename, um.elo, um.rating_count
+        FROM user_media um JOIN media m ON um.media_id = m.id
+        WHERE um.username=?
+        """,
+        (username,),
+    )
     user_rows = {row[0]: (row[1], row[2]) for row in cur.fetchall()}
     conn.close()
-    global_rows.sort(key=lambda r: r[1])
+
+    global_rows.sort(key=lambda r: r[1], reverse=True)
     highest = global_rows[:limit]
     lowest = global_rows[-limit:][::-1]
     highest = [
-        (m, g_avg, user_rows.get(m, (None, 0))[0], g_cnt, user_rows.get(m, (None, 0))[1])
-        for m, g_avg, g_cnt in highest
+        (
+            m,
+            g_elo,
+            user_rows.get(m, (None, 0))[0],
+            g_cnt,
+            user_rows.get(m, (None, 0))[1],
+        )
+        for m, g_elo, g_cnt in highest
     ]
     lowest = [
-        (m, g_avg, user_rows.get(m, (None, 0))[0], g_cnt, user_rows.get(m, (None, 0))[1])
-        for m, g_avg, g_cnt in lowest
+        (
+            m,
+            g_elo,
+            user_rows.get(m, (None, 0))[0],
+            g_cnt,
+            user_rows.get(m, (None, 0))[1],
+        )
+        for m, g_elo, g_cnt in lowest
     ]
     return highest, lowest
 
@@ -292,31 +294,35 @@ def get_elo_rankings(limit: int = 20) -> list[tuple[str, float, int]]:
     return rows
 
 
-def get_name_group_elo_stats() -> list[tuple[str, int, float, float, float, float]]:
+def get_name_group_elo_stats() -> (
+    list[tuple[str, int, int, float, float, float, float]]
+):
     """Return stats of ELO ratings grouped by normalized media name."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    cur.execute("SELECT filename, elo FROM media")
+    cur.execute("SELECT filename, elo, rating_count FROM media")
     rows = cur.fetchall()
     conn.close()
-    groups: dict[str, list[float]] = {}
-    for media, rating in rows:
+    groups: dict[str, list[tuple[float, int]]] = {}
+    for media, rating, cnt in rows:
         name, _ = os.path.splitext(media)
         name = name.lower().replace("_", "")
         name = "".join(ch for ch in name if not ch.isdigit())
-        groups.setdefault(name, []).append(rating)
+        groups.setdefault(name, []).append((rating, cnt))
 
     stats = []
-    for name, ratings in groups.items():
-        count = len(ratings)
+    for name, values in groups.items():
+        count = len(values)
+        total_ratings = sum(c for _, c in values)
+        ratings = [r for r, _ in values]
         avg = sum(ratings) / count
         mn = min(ratings)
         mx = max(ratings)
         var = sum((r - avg) ** 2 for r in ratings) / count
-        std = var ** 0.5
-        stats.append((name, count, mn, mx, avg, std))
+        std = var**0.5
+        stats.append((name, count, total_ratings, mn, mx, avg, std))
 
-    stats.sort(key=lambda s: -s[4])
+    stats.sort(key=lambda s: -s[5])
     return stats
 
 
@@ -349,7 +355,7 @@ def rate(request: Request, order: str = Form(...)):
     username = request.cookies.get("username")
     if not username:
         return RedirectResponse("/login")
-    files = [f for f in order.split(',') if f]
+    files = [f for f in order.split(",") if f]
     ts = int(time.time())
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
@@ -604,9 +610,7 @@ def admin_upload_media(
 def remove_duplicate_images() -> int:
     """Remove duplicate images based on their pixel data and return count removed."""
     files = [
-        f
-        for f in os.listdir(MEDIA_DIR)
-        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+        f for f in os.listdir(MEDIA_DIR) if os.path.isfile(os.path.join(MEDIA_DIR, f))
     ]
     hashes: dict[str, list[str]] = {}
     for fname in files:

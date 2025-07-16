@@ -40,13 +40,13 @@
 <h2>Global Highest Rated Media</h2>
 {% if global_highest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  <tr><th>Preview</th><th>Media</th><th>Global ELO</th><th>Your ELO</th><th>Global Cnt</th><th>Your Cnt</th></tr>
   {% for media, global_score, user_score, global_cnt, user_cnt in global_highest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
-    <td>{{ '%.2f' % global_score }}</td>
-    <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+    <td>{{ '%.1f' % global_score }}</td>
+    <td>{{ '%.1f' % user_score if user_score is not none else 'N/A' }}</td>
     <td>{{ global_cnt }}</td>
     <td>{{ user_cnt }}</td>
   </tr>
@@ -78,13 +78,13 @@
 <h2>Global Lowest Rated Media</h2>
 {% if global_lowest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  <tr><th>Preview</th><th>Media</th><th>Global ELO</th><th>Your ELO</th><th>Global Cnt</th><th>Your Cnt</th></tr>
   {% for media, global_score, user_score, global_cnt, user_cnt in global_lowest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
-    <td>{{ '%.2f' % global_score }}</td>
-    <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+    <td>{{ '%.1f' % global_score }}</td>
+    <td>{{ '%.1f' % user_score if user_score is not none else 'N/A' }}</td>
     <td>{{ global_cnt }}</td>
     <td>{{ user_cnt }}</td>
   </tr>
@@ -100,11 +100,12 @@
 <h2>ELO Stats by Name</h2>
 {% if name_group_stats %}
 <table class="stats-table">
-  <tr><th>Name</th><th>Count</th><th>Min</th><th>Max</th><th>Avg</th><th>Stddev</th></tr>
-  {% for name, count, mn, mx, avg, std in name_group_stats %}
+  <tr><th>Name</th><th>Files</th><th>Ratings</th><th>Min</th><th>Max</th><th>Avg</th><th>Stddev</th></tr>
+  {% for name, count, ratings, mn, mx, avg, std in name_group_stats %}
   <tr>
     <td>{{ name }}</td>
     <td>{{ count }}</td>
+    <td>{{ ratings }}</td>
     <td>{{ '%.1f' % mn }}</td>
     <td>{{ '%.1f' % mx }}</td>
     <td>{{ '%.1f' % avg }}</td>
