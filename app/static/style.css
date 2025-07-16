@@ -208,22 +208,15 @@ img {
   object-fit: contain;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+@keyframes fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-@keyframes rotate {
-  0% { transform: rotate(0); }
-  100% { transform: rotate(360deg); }
-}
-
-.anim-pulse { animation: pulse 3s ease-in-out infinite; }
-.anim-bounce { animation: bounce 2s ease-in-out infinite; }
-.anim-rotate { animation: rotate 8s linear infinite; }
+.fade-in { animation: fade-in 0.5s ease forwards; }
+.fade-out { animation: fade-out 0.5s ease forwards; }
