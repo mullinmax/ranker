@@ -37,6 +37,16 @@ embeddings. Set the URL, optional API key and model name then click "Generate
 Embeddings" to create embeddings for all media files. Previously processed
 images are skipped.
 
+### Generating embeddings with Ollama
+
+1. Start the application and log in with an admin account.
+2. Navigate to `/admin` and locate the **Ollama Settings** section.
+3. Enter the endpoint URL of your Ollama server, the model to use and an
+   optional API key if your server requires authentication, then click **Save**.
+4. Click **Generate Embeddings** to send each image to Ollama. Only files that
+   have not been processed for the selected model will be uploaded.
+5. The configuration is saved to `/config/ollama_config.json` so it persists between restarts. Generated embeddings are stored in the `embeddings` table of the database.
+
 ## Docker
 
 Build and run with Docker:
