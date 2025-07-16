@@ -4,7 +4,7 @@
 <h2>Global ELO Ranking</h2>
 {% if elo_ranking %}
 <table class="stats-table">
-  <tr><th>#</th><th>Preview</th><th>Media</th><th>ELO</th><th>Ratings</th></tr>
+  <tr><th data-type="number">#</th><th>Preview</th><th data-type="string">Media</th><th data-type="number">ELO</th><th data-type="number">Ratings</th></tr>
   {% for media, elo, cnt in elo_ranking %}
   <tr>
     <td>{{ loop.index }}</td>
@@ -21,7 +21,7 @@
 <h2>Your Highest Rated Media</h2>
 {% if user_highest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Your ELO</th><th>Global ELO</th><th>Your Cnt</th><th>Global Cnt</th></tr>
+  <tr><th>Preview</th><th data-type="string">Media</th><th data-type="number">Your ELO</th><th data-type="number">Global ELO</th><th data-type="number">Your #</th><th data-type="number">Global #</th></tr>
   {% for media, user_score, global_score, user_cnt, global_cnt in user_highest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
@@ -40,7 +40,7 @@
 <h2>Global Highest Rated Media</h2>
 {% if global_highest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global ELO</th><th>Your ELO</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  <tr><th>Preview</th><th data-type="string">Media</th><th data-type="number">Global ELO</th><th data-type="number">Your ELO</th><th data-type="number">Global #</th><th data-type="number">Your #</th></tr>
   {% for media, global_score, user_score, global_cnt, user_cnt in global_highest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
@@ -59,7 +59,7 @@
 <h2>Your Lowest Rated Media</h2>
 {% if user_lowest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Your ELO</th><th>Global ELO</th><th>Your Cnt</th><th>Global Cnt</th></tr>
+  <tr><th>Preview</th><th data-type="string">Media</th><th data-type="number">Your ELO</th><th data-type="number">Global ELO</th><th data-type="number">Your #</th><th data-type="number">Global #</th></tr>
   {% for media, user_score, global_score, user_cnt, global_cnt in user_lowest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
@@ -78,7 +78,7 @@
 <h2>Global Lowest Rated Media</h2>
 {% if global_lowest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global ELO</th><th>Your ELO</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  <tr><th>Preview</th><th data-type="string">Media</th><th data-type="number">Global ELO</th><th data-type="number">Your ELO</th><th data-type="number">Global #</th><th data-type="number">Your #</th></tr>
   {% for media, global_score, user_score, global_cnt, user_cnt in global_lowest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
@@ -100,7 +100,7 @@
 <h2>ELO Stats by Name</h2>
 {% if name_group_stats %}
 <table class="stats-table">
-  <tr><th>Name</th><th>Files</th><th>Ratings</th><th>Min</th><th>Max</th><th>Avg</th><th>Stddev</th></tr>
+  <tr><th data-type="string">Name</th><th data-type="number">Files</th><th data-type="number">Ratings</th><th data-type="number">Min</th><th data-type="number">Max</th><th data-type="number">Avg</th><th data-type="number">Stddev</th></tr>
   {% for name, count, ratings, mn, mx, avg, std in name_group_stats %}
   <tr>
     <td>{{ name }}</td>
@@ -116,4 +116,5 @@
 {% else %}
 <p>No ELO data yet.</p>
 {% endif %}
+<script src="/static/table-sort.js"></script>
 {% endblock %}
