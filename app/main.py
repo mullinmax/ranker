@@ -224,6 +224,34 @@ def get_elo_rankings(limit: int = 20) -> list[tuple[str, float]]:
     return rows
 
 
+def get_name_group_elo_stats() -> list[tuple[str, int, float, float, float, float]]:
+    """Return stats of ELO ratings grouped by normalized media name."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT media, rating FROM elo")
+    rows = cur.fetchall()
+    conn.close()
+    groups: dict[str, list[float]] = {}
+    for media, rating in rows:
+        name, _ = os.path.splitext(media)
+        name = name.lower().replace("_", "")
+        name = "".join(ch for ch in name if not ch.isdigit())
+        groups.setdefault(name, []).append(rating)
+
+    stats = []
+    for name, ratings in groups.items():
+        count = len(ratings)
+        avg = sum(ratings) / count
+        mn = min(ratings)
+        mx = max(ratings)
+        var = sum((r - avg) ** 2 for r in ratings) / count
+        std = var ** 0.5
+        stats.append((name, count, mn, mx, avg, std))
+
+    stats.sort(key=lambda s: -s[4])
+    return stats
+
+
 @app.get("/", response_class=HTMLResponse)
 def index(request: Request):
     username = request.cookies.get("username")
@@ -357,6 +385,7 @@ def stats(request: Request):
     global_highest, global_lowest = get_global_media_stats_with_user(username)
     user_highest, user_lowest = get_user_media_stats(username)
     elo_ranking = get_elo_rankings()
+    name_group_stats = get_name_group_elo_stats()
     media_total, media_counts = get_media_file_summary()
     return templates.TemplateResponse(
         "stats.html",
@@ -368,6 +397,7 @@ def stats(request: Request):
             "user_highest": user_highest,
             "user_lowest": user_lowest,
             "elo_ranking": elo_ranking,
+            "name_group_stats": name_group_stats,
             "media_total": media_total,
             "media_counts": media_counts,
             "show_back": True,

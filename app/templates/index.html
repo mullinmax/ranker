@@ -10,22 +10,24 @@
   </div>
   {% endfor %}
 </div>
-<form id="rate-form" action="/rate" method="post">
-  <input type="hidden" id="order" name="order" />
-  <button id="submit-btn" type="submit" disabled>Submit</button>
-</form>
 {% else %}
 <p>No media files found</p>
 {% endif %}
 <script>
 let selected = [];
 const MAX_RANK = 4;
+const REQUIRED_SELECTIONS = MAX_RANK - 1;
+const animations = ['anim-pulse','anim-bounce','anim-rotate'];
+document.querySelectorAll('.media-preview').forEach(img => {
+  const cls = animations[Math.floor(Math.random()*animations.length)];
+  img.classList.add(cls);
+});
 function toggleRank(el){
   const file = el.dataset.file;
   const idx = selected.indexOf(file);
   if(idx >= 0){
     selected.splice(idx,1);
-  } else if(selected.length < MAX_RANK){
+  } else if(selected.length < REQUIRED_SELECTIONS){
     selected.push(file);
   }
   update();
@@ -45,14 +47,23 @@ function update(){
     if(!order.includes(c.dataset.file)) order.push(c.dataset.file);
   });
   document.getElementById('order').value = order.join(',');
-  document.getElementById('submit-btn').disabled = selected.length < MAX_RANK;
+  document.getElementById('submit-btn').disabled = selected.length < REQUIRED_SELECTIONS;
 }
 document.addEventListener('keydown', e => {
   const n = parseInt(e.key);
-  if(n >= 1 && n <= 4){
+  if(n >= 1 && n <= REQUIRED_SELECTIONS){
     const containers = document.querySelectorAll('.media-container');
     if(containers[n-1]) toggleRank(containers[n-1]);
   }
 });
 </script>
+{% endblock %}
+
+{% block footer %}
+{% if files %}
+<form id="rate-form" action="/rate" method="post">
+  <input type="hidden" id="order" name="order" />
+  <button id="submit-btn" type="submit" disabled>Submit</button>
+</form>
+{% endif %}
 {% endblock %}
