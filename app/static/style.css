@@ -219,7 +219,7 @@ img {
 .stats-table th,
 .stats-table td {
   border-bottom: 1px solid #ddd;
-  padding: 0.5rem;
+  padding: 0.25rem;
   text-align: left;
 }
 
@@ -228,8 +228,8 @@ img {
 }
 
 .thumbnail {
-  max-width: 50px;
-  max-height: 50px;
+  max-width: 75px;
+  max-height: 75px;
   object-fit: contain;
 }
 
