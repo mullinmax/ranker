@@ -1,6 +1,6 @@
 # Ranker
 
-Simple FastAPI application for rating media files.
+Simple FastAPI application for ranking media files.
 
 ## Development
 
