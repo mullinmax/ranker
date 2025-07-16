@@ -312,11 +312,30 @@ def index(request: Request):
     if not username:
         return RedirectResponse("/login")
     file_names = get_media_files(username, NUM_MEDIA)
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    file_info = []
+    for fname in file_names:
+        cur.execute("SELECT id, elo FROM media WHERE filename=?", (fname,))
+        row = cur.fetchone()
+        if row:
+            media_id, g_elo = row
+            cur.execute(
+                "SELECT elo FROM user_media WHERE username=? AND media_id=?",
+                (username, media_id),
+            )
+            urow = cur.fetchone()
+            u_elo = urow[0] if urow else None
+        else:
+            g_elo = 1000
+            u_elo = None
+        file_info.append({"filename": fname, "global_elo": g_elo, "user_elo": u_elo})
+    conn.close()
     return templates.TemplateResponse(
         "index.html",
         {
             "request": request,
-            "files": file_names,
+            "files": file_info,
             "username": username,
             "is_admin": is_admin(username),
             "show_admin": is_admin(username),

@@ -4,9 +4,10 @@
 {% if files %}
 <div class="media-grid">
   {% for f in files %}
-  <div class="media-container" data-file="{{ f }}" onclick="toggleRank(this)">
-    <img class="media-preview" src="/media/{{ f }}" alt="{{ f }}" />
+  <div class="media-container" data-file="{{ f.filename }}" onclick="toggleRank(this)">
+    <img class="media-preview" src="/media/{{ f.filename }}" alt="{{ f.filename }}" />
     <span class="medal"></span>
+    <span class="elo-info">G {{ '%.1f' % f.global_elo }} | U {{ '%.1f' % f.user_elo if f.user_elo is not none else 'N/A' }}</span>
   </div>
   {% endfor %}
 </div>

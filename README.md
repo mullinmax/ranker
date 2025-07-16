@@ -19,13 +19,14 @@ uvicorn app.main:app --reload
 The app serves files from a `/ranker-media` directory. You should mount a
 folder from the host into this location when running the container. A SQLite
 database is stored under `/config`, so that directory should also be mounted to
-retain user accounts and ratings. Users can register, log in and rate the
-displayed media from 1 to 5 using buttons or the keyboard. Media items are
-presented in order of least recently rated for each user, so once an item is
-scored a different file will be shown next. Each rating stores the time it was
-submitted so files can be sorted by when a user last rated them.
-The page also displays when the current media was last rated by the user. If it
-was rated today, the timestamp appears in green.
+retain user accounts and ranking history. Users can register, log in and order
+the displayed media using drag and drop or the keyboard. Each submission updates
+the global and personal ELO scores for the selected files. Media items are
+presented in order of least recently ranked for each user, so once an item is
+scored a different file will be shown next. Each ranking stores the time it was
+submitted so files can be sorted by when a user last interacted with them.
+The page also displays when the current media was last ranked by the user. If it
+was ranked today, the timestamp appears in green.
 
 Admin usernames can be supplied via the `ADMIN_USERS` environment variable as a
 comma separated list. When set, an authenticated admin can visit `/admin` to
