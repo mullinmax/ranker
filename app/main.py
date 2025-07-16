@@ -355,7 +355,7 @@ def index(request: Request):
             "show_back": False,
             "show_stats_link": True,
             "body_class": None,
-            "container_class": None,
+            "container_class": "ranking-container",
         },
         status_code=200 if file_names else 404,
     )
