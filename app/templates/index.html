@@ -12,7 +12,7 @@
 </div>
 <form id="rate-form" action="/rate" method="post">
   <input type="hidden" id="order" name="order" />
-  <button id="submit-btn" type="submit" style="display:none;">Submit</button>
+  <button id="submit-btn" type="submit" disabled>Submit</button>
 </form>
 {% else %}
 <p>No media files found</p>
@@ -45,8 +45,7 @@ function update(){
     if(!order.includes(c.dataset.file)) order.push(c.dataset.file);
   });
   document.getElementById('order').value = order.join(',');
-  document.getElementById('submit-btn').style.display =
-      selected.length >= MAX_RANK ? 'inline-block' : 'none';
+  document.getElementById('submit-btn').disabled = selected.length < MAX_RANK;
 }
 document.addEventListener('keydown', e => {
   const n = parseInt(e.key);
