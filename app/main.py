@@ -109,6 +109,7 @@ def get_media_file_summary() -> tuple[int, list[tuple[str, int]]]:
 
 
 def get_media_files(username: str, count: int) -> list[str]:
+    """Return a shuffled list of media files for ranking."""
     files = [
         f
         for f in os.listdir(MEDIA_DIR)
@@ -121,58 +122,40 @@ def get_media_files(username: str, count: int) -> list[str]:
     cur = conn.cursor()
     for f in files:
         cur.execute("INSERT OR IGNORE INTO media (filename) VALUES (?)", (f,))
-    cur.execute(
-        """
-        SELECT m.filename, MAX(r.rated_at) FROM media m
-        LEFT JOIN (
-            SELECT first_id AS mid, rated_at FROM rankings WHERE username=?
-            UNION ALL SELECT second_id, rated_at FROM rankings WHERE username=?
-            UNION ALL SELECT third_id, rated_at FROM rankings WHERE username=?
-            UNION ALL SELECT fourth_id, rated_at FROM rankings WHERE username=?
-        ) r ON m.id = r.mid
-        GROUP BY m.filename
-        """,
-        (username, username, username, username),
-    )
-    last_times = {row[0]: row[1] or 0 for row in cur.fetchall()}
     conn.commit()
+
+    cur.execute("SELECT filename, elo, rating_count FROM media")
+    rows = cur.fetchall()
     conn.close()
 
-    scored_files: list[tuple[int, str]] = []
-    for f in files:
-        last_time = last_times.get(f, 0)
-        scored_files.append((last_time, f))
+    stats = {row[0]: (row[1], row[2]) for row in rows}
 
-    scored_files.sort(key=lambda x: x[0])
+    random.shuffle(files)
+    base_count = min(3, len(files))
+    base_selection = files[:base_count]
 
-    if len(files) <= count:
-        chosen = [f for _, f in scored_files]
-        random.shuffle(chosen)
-        return chosen
+    if len(files) <= 3 or count <= base_count:
+        random.shuffle(base_selection)
+        return base_selection[: min(count, len(base_selection))]
 
-    half = len(scored_files) // 2
-    old_files = [f for _, f in scored_files[:half]]
-    recent_files = [f for _, f in scored_files[half:]]
+    avg = sum(stats[f][0] for f in base_selection) / len(base_selection)
+    rated_candidates = [
+        (fname, elo)
+        for fname, (elo, cnt) in stats.items()
+        if cnt > 0 and fname not in base_selection
+    ]
 
-    def pick_candidate() -> list[str]:
-        num_old = count // 2
-        num_recent = count - num_old
-        candidates: list[str] = []
-        if old_files:
-            candidates.extend(random.sample(old_files, min(num_old, len(old_files))))
-        remaining = [f for f in recent_files if f not in candidates]
-        if len(remaining) < num_recent:
-            remaining = [f for _, f in scored_files if f not in candidates]
+    fourth: str | None = None
+    if rated_candidates:
+        fourth = min(rated_candidates, key=lambda r: abs(r[1] - avg))[0]
+    else:
+        remaining = [f for f in files if f not in base_selection]
         if remaining:
-            candidates.extend(random.sample(remaining, min(num_recent, len(remaining))))
-        while len(candidates) < min(count, len(files)):
-            extra = random.choice(files)
-            if extra not in candidates:
-                candidates.append(extra)
-        random.shuffle(candidates)
-        return candidates[:count]
+            fourth = random.choice(remaining)
 
-    return pick_candidate()
+    chosen = base_selection + ([fourth] if fourth else [])
+    random.shuffle(chosen)
+    return chosen[: min(count, len(chosen))]
 
 
 def change_user_password(username: str, new_password: str) -> None:
