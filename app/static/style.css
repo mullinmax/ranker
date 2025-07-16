@@ -2,7 +2,8 @@ body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
   margin: 0;
-  padding: 0;
+  padding-top: 60px;
+  padding-bottom: 80px;
   min-height: 100vh;
 }
 
@@ -78,6 +79,8 @@ img {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  height: calc(100vh - 140px);
 }
 
 .medal {
@@ -106,11 +109,28 @@ img {
 }
 
 .header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 1000;
+}
+.footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  background: white;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
 }
 
 .username {
@@ -160,7 +180,7 @@ img {
     padding: 1rem;
   }
   #rate-form {
-    margin-top: 1rem;
+    margin: 0;
   }
 }
 
@@ -187,3 +207,23 @@ img {
   max-height: 50px;
   object-fit: contain;
 }
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes rotate {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+
+.anim-pulse { animation: pulse 3s ease-in-out infinite; }
+.anim-bounce { animation: bounce 2s ease-in-out infinite; }
+.anim-rotate { animation: rotate 8s linear infinite; }

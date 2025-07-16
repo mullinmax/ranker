@@ -92,4 +92,22 @@
   <li>{{ name }}: {{ count }}</li>
   {% endfor %}
 </ul>
+<h2>ELO Stats by Name</h2>
+{% if name_group_stats %}
+<table class="stats-table">
+  <tr><th>Name</th><th>Count</th><th>Min</th><th>Max</th><th>Avg</th><th>Stddev</th></tr>
+  {% for name, count, mn, mx, avg, std in name_group_stats %}
+  <tr>
+    <td>{{ name }}</td>
+    <td>{{ count }}</td>
+    <td>{{ '%.1f' % mn }}</td>
+    <td>{{ '%.1f' % mx }}</td>
+    <td>{{ '%.1f' % avg }}</td>
+    <td>{{ '%.1f' % std }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No ELO data yet.</p>
+{% endif %}
 {% endblock %}
