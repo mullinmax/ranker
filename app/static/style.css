@@ -2,12 +2,17 @@
   box-sizing: border-box;
 }
 
+:root {
+  --header-height: 60px;
+  --footer-height: 80px;
+}
+
 body {
   font-family: Arial, sans-serif;
   background-color: #f4f4f4;
   margin: 0;
-  padding-top: 60px;
-  padding-bottom: 80px;
+  padding-top: var(--header-height);
+  padding-bottom: var(--footer-height);
   min-height: 100vh;
 }
 
@@ -91,7 +96,7 @@ img {
   gap: 1rem;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
-  width: min(100vw, calc((100vh - 140px) * 4 / 3));
+  width: min(100vw, calc((100vh - var(--header-height) - var(--footer-height)) * 4 / 3));
   aspect-ratio: 4 / 3;
   margin: 0 auto;
 }
