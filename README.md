@@ -48,3 +48,48 @@ docker run -p 8000:8000 \
 ## CI
 
 GitHub Actions workflow builds the Docker image and publishes it to GHCR on each push to `main`.
+
+## Database schema
+
+The application uses a SQLite database with four tables:
+
+```
+users(id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE,
+      password TEXT)
+
+ratings(id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT REFERENCES users(username),
+        media TEXT,
+        score INTEGER,
+        rated_at INTEGER)
+
+elo(media TEXT PRIMARY KEY,
+    rating REAL)
+
+combos(username TEXT,
+       combo TEXT,
+       rated_at INTEGER,
+       PRIMARY KEY(username, combo))
+```
+
+When a user ranks media items the `/rate` endpoint inserts rows into the
+`ratings` table and creates an `elo` record for any new file starting at a
+rating of 1000. The `combos` table keeps track of which sets of files each user
+has already seen so the ranking page can present new combinations.
+
+### Ranking math
+
+Each ranking submission updates the ELO scores of the involved media. For every
+pair of files `(winner, loser)` the ratings are adjusted using the standard ELO
+formula with `K = 32`:
+
+```
+Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
+Eb = 1 / (1 + 10 ** ((Ra - Rb) / 400))
+Ra_new = Ra + K * (1 - Ea)
+Rb_new = Rb + K * (0 - Eb)
+```
+
+These values are then displayed on the statistics page ordered from highest to
+lowest.
