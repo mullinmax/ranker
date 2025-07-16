@@ -69,7 +69,13 @@ rankings(id INTEGER PRIMARY KEY AUTOINCREMENT,
          second_id INTEGER,
          third_id INTEGER,
          fourth_id INTEGER,
-         rated_at INTEGER)
+         rated_at INTEGER),
+
+user_media(username TEXT,
+           media_id INTEGER,
+           elo REAL DEFAULT 1000,
+           rating_count INTEGER DEFAULT 0,
+           PRIMARY KEY(username, media_id))
 ```
 
 Each row in `rankings` stores the four media IDs shown together in their ranked
