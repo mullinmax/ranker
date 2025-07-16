@@ -101,4 +101,6 @@ lowest.
 
 Each user also maintains personal Elo ratings for every media item they have
 ranked. The stats page shows your own Elo alongside the global values for the
-highest and lowest rated media.
+highest and lowest rated media. Every entry on the statistics tables includes
+the number of rankings that its Elo score is based on, both globally and for
+your account.
