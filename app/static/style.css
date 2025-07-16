@@ -43,6 +43,13 @@ button:hover, input[type="submit"]:hover {
   background-color: #45a049;
 }
 
+button:disabled,
+input[type="submit"]:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 input[type="text"],
 input[type="password"] {
   width: 100%;
