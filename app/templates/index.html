@@ -69,6 +69,7 @@ function update(){
   document.getElementById('order').value = order.join(',');
   document.getElementById('submit-btn').disabled = selected.length < REQUIRED_SELECTIONS;
 }
+
 document.addEventListener('keydown', e => {
   if(e.key === 'Enter'){
     const btn = document.getElementById('submit-btn');
@@ -78,11 +79,12 @@ document.addEventListener('keydown', e => {
     }
   }
   const n = parseInt(e.key);
-  if(n >= 1 && n <= REQUIRED_SELECTIONS){
+  if(n >= 1 && n <= MAX_RANK){
     const containers = document.querySelectorAll('.media-container');
     if(containers[n-1]) toggleRank(containers[n-1]);
   }
 });
+
 </script>
 {% endblock %}
 
