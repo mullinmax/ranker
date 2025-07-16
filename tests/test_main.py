@@ -70,13 +70,44 @@ def test_rating_and_stats(client: TestClient, tmp_path: Path):
 
     conn = sqlite3.connect(main.DATABASE)
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM ratings WHERE username=?", ("u",))
+    cur.execute("SELECT COUNT(*) FROM rankings WHERE username=?", ("u",))
     count = cur.fetchone()[0]
     conn.close()
-    assert count == 2
+    assert count == 1
 
     resp = client.get("/stats")
     assert resp.status_code == 200
+
+
+def test_rank_event_recorded(client: TestClient, tmp_path: Path):
+    files = []
+    for i in range(4):
+        f = tmp_path / f"f{i}.jpg"
+        f.write_bytes(bytes(str(i), "utf-8"))
+        dest = Path(main.MEDIA_DIR) / f.name
+        dest.write_bytes(f.read_bytes())
+        files.append(f.name)
+
+    client.post("/register", data={"username": "u", "password": "p"}, follow_redirects=False)
+    client.post("/login", data={"username": "u", "password": "p"}, follow_redirects=False)
+
+    order = ",".join(files)
+    resp = client.post("/rate", data={"order": order}, follow_redirects=False)
+    assert resp.status_code == 303
+
+    conn = sqlite3.connect(main.DATABASE)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT first_id, second_id, third_id, fourth_id FROM rankings WHERE username=?",
+        ("u",),
+    )
+    row = cur.fetchone()
+    assert row is not None
+    cur.execute("SELECT filename FROM media ORDER BY id")
+    media_names = [r[0] for r in cur.fetchall()]
+    conn.close()
+    recorded = [media_names[row[i] - 1] if row[i] else None for i in range(4)]
+    assert recorded[: len(files)] == files
 
 
 def test_admin_panel(admin_client: TestClient):

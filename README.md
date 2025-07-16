@@ -51,32 +51,31 @@ GitHub Actions workflow builds the Docker image and publishes it to GHCR on each
 
 ## Database schema
 
-The application uses a SQLite database with four tables:
+The application uses a SQLite database with three tables:
 
 ```
 users(id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE,
       password TEXT)
 
-ratings(id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT REFERENCES users(username),
-        media TEXT,
-        score INTEGER,
-        rated_at INTEGER)
+media(id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT UNIQUE,
+      elo REAL DEFAULT 1000,
+      rating_count INTEGER DEFAULT 0)
 
-elo(media TEXT PRIMARY KEY,
-    rating REAL)
-
-combos(username TEXT,
-       combo TEXT,
-       rated_at INTEGER,
-       PRIMARY KEY(username, combo))
+rankings(id INTEGER PRIMARY KEY AUTOINCREMENT,
+         username TEXT REFERENCES users(username),
+         first_id INTEGER,
+         second_id INTEGER,
+         third_id INTEGER,
+         fourth_id INTEGER,
+         rated_at INTEGER)
 ```
 
-When a user ranks media items the `/rate` endpoint inserts rows into the
-`ratings` table and creates an `elo` record for any new file starting at a
-rating of 1000. The `combos` table keeps track of which sets of files each user
-has already seen so the ranking page can present new combinations.
+Each row in `rankings` stores the four media IDs shown together in their ranked
+order. The `media` table tracks the current ELO rating for every file along with
+how many pairwise matches that rating is based on. New media rows start with an
+ELO of `1000`.
 
 ### Ranking math
 
