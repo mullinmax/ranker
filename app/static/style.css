@@ -92,7 +92,7 @@ img {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   height: calc(100vh - 140px);
-  width: min(100vw, calc((100vh - 140px) * 4 / 3));
+  width: 100vw;
   margin: 0 auto;
 }
 
