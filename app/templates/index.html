@@ -18,24 +18,17 @@ let selected = [];
 const MAX_RANK = 4;
 const REQUIRED_SELECTIONS = MAX_RANK - 1;
 
-function adjustImage(img){
-  const wide = img.naturalWidth >= img.naturalHeight;
-  if(wide){
-    img.style.width = '100%';
-    img.style.height = 'auto';
-  } else {
-    img.style.width = 'auto';
-    img.style.height = '100%';
-  }
+function updateLayout(){
+  const header = document.querySelector('.header');
+  const footer = document.querySelector('.footer');
+  const root = document.documentElement;
+  if(header) root.style.setProperty('--header-height', `${header.offsetHeight}px`);
+  if(footer) root.style.setProperty('--footer-height', `${footer.offsetHeight}px`);
 }
 
 window.addEventListener('load', () => {
+  updateLayout();
   document.querySelectorAll('.media-preview').forEach(img => {
-    if(img.complete){
-      adjustImage(img);
-    } else {
-      img.onload = () => adjustImage(img);
-    }
     img.classList.add('fade-in');
   });
 
@@ -48,6 +41,7 @@ window.addEventListener('load', () => {
     });
   }
 });
+window.addEventListener('resize', updateLayout);
 function toggleRank(el){
   const file = el.dataset.file;
   const idx = selected.indexOf(file);
@@ -76,6 +70,13 @@ function update(){
   document.getElementById('submit-btn').disabled = selected.length < REQUIRED_SELECTIONS;
 }
 document.addEventListener('keydown', e => {
+  if(e.key === 'Enter'){
+    const btn = document.getElementById('submit-btn');
+    if(btn && !btn.disabled){
+      btn.click();
+      return;
+    }
+  }
   const n = parseInt(e.key);
   if(n >= 1 && n <= REQUIRED_SELECTIONS){
     const containers = document.querySelectorAll('.media-container');
