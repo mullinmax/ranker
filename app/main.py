@@ -56,6 +56,17 @@ def init_db():
         )
         """
     )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS user_media (
+            username TEXT,
+            media_id INTEGER,
+            elo REAL DEFAULT 1000,
+            rating_count INTEGER DEFAULT 0,
+            PRIMARY KEY (username, media_id)
+        )
+        """
+    )
     conn.commit()
     conn.close()
 
@@ -200,54 +211,36 @@ def delete_user(username: str) -> None:
 
 def get_user_media_stats(
     username: str, limit: int = 5
-) -> tuple[list[tuple[str, float, float | None]], list[tuple[str, float, float | None]]]:
-    """Return a user's highest and lowest rated media with global averages."""
+) -> tuple[list[tuple[str, float, float, int, int]], list[tuple[str, float, float, int, int]]]:
+    """Return a user's highest and lowest ELO rated media with global ELO."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
-    query_user = """
-        SELECT m.filename, AVG(score) FROM (
-            SELECT first_id AS media_id, 1 AS score FROM rankings WHERE username=?
-            UNION ALL SELECT second_id, 2 FROM rankings WHERE username=?
-            UNION ALL SELECT third_id, 3 FROM rankings WHERE username=?
-            UNION ALL SELECT fourth_id, 4 FROM rankings WHERE username=?
-        ) r JOIN media m ON m.id = r.media_id
-        GROUP BY m.filename
-    """
-    cur.execute(query_user, (username, username, username, username))
-    user_rows = cur.fetchall()
-    if not user_rows:
-        conn.close()
-        return [], []
-    query_global = """
-        SELECT m.filename, AVG(score) FROM (
-            SELECT first_id AS media_id, 1 AS score FROM rankings
-            UNION ALL SELECT second_id, 2 FROM rankings
-            UNION ALL SELECT third_id, 3 FROM rankings
-            UNION ALL SELECT fourth_id, 4 FROM rankings
-        ) r JOIN media m ON m.id = r.media_id
-        GROUP BY m.filename
-    """
-    cur.execute(query_global)
-    global_rows = dict(cur.fetchall())
+    cur.execute(
+        """
+        SELECT m.filename, um.elo, m.elo, um.rating_count, m.rating_count
+        FROM user_media um JOIN media m ON um.media_id=m.id
+        WHERE um.username=?
+        """,
+        (username,),
+    )
+    rows = cur.fetchall()
     conn.close()
-    user_rows.sort(key=lambda r: r[1])
-    highest = user_rows[:limit]
-    lowest = user_rows[-limit:][::-1]
-    highest = [
-        (m, u_avg, global_rows.get(m)) for m, u_avg in highest
-    ]
-    lowest = [(m, u_avg, global_rows.get(m)) for m, u_avg in lowest]
+    if not rows:
+        return [], []
+    rows.sort(key=lambda r: r[1], reverse=True)
+    highest = rows[:limit]
+    lowest = rows[-limit:][::-1]
     return highest, lowest
 
 
 def get_global_media_stats_with_user(
     username: str, limit: int = 5
-) -> tuple[list[tuple[str, float, float | None]], list[tuple[str, float, float | None]]]:
+) -> tuple[list[tuple[str, float, float | None, int, int]], list[tuple[str, float, float | None, int, int]]]:
     """Return global stats with the requesting user's average for each item."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
     query_global = """
-        SELECT m.filename, AVG(score) FROM (
+        SELECT m.filename, AVG(score), COUNT(*) FROM (
             SELECT first_id AS media_id, 1 AS score FROM rankings
             UNION ALL SELECT second_id, 2 FROM rankings
             UNION ALL SELECT third_id, 3 FROM rankings
@@ -261,7 +254,7 @@ def get_global_media_stats_with_user(
         conn.close()
         return [], []
     query_user = """
-        SELECT m.filename, AVG(score) FROM (
+        SELECT m.filename, AVG(score), COUNT(*) FROM (
             SELECT first_id AS media_id, 1 AS score FROM rankings WHERE username=?
             UNION ALL SELECT second_id, 2 FROM rankings WHERE username=?
             UNION ALL SELECT third_id, 3 FROM rankings WHERE username=?
@@ -270,22 +263,28 @@ def get_global_media_stats_with_user(
         GROUP BY m.filename
     """
     cur.execute(query_user, (username, username, username, username))
-    user_rows = dict(cur.fetchall())
+    user_rows = {row[0]: (row[1], row[2]) for row in cur.fetchall()}
     conn.close()
     global_rows.sort(key=lambda r: r[1])
     highest = global_rows[:limit]
     lowest = global_rows[-limit:][::-1]
-    highest = [(m, g_avg, user_rows.get(m)) for m, g_avg in highest]
-    lowest = [(m, g_avg, user_rows.get(m)) for m, g_avg in lowest]
+    highest = [
+        (m, g_avg, user_rows.get(m, (None, 0))[0], g_cnt, user_rows.get(m, (None, 0))[1])
+        for m, g_avg, g_cnt in highest
+    ]
+    lowest = [
+        (m, g_avg, user_rows.get(m, (None, 0))[0], g_cnt, user_rows.get(m, (None, 0))[1])
+        for m, g_avg, g_cnt in lowest
+    ]
     return highest, lowest
 
 
-def get_elo_rankings(limit: int = 20) -> list[tuple[str, float]]:
+def get_elo_rankings(limit: int = 20) -> list[tuple[str, float, int]]:
     """Return media items ordered by ELO rating descending."""
     conn = sqlite3.connect(DATABASE)
     cur = conn.cursor()
     cur.execute(
-        "SELECT filename, elo FROM media ORDER BY elo DESC LIMIT ?",
+        "SELECT filename, elo, rating_count FROM media ORDER BY elo DESC LIMIT ?",
         (limit,),
     )
     rows = cur.fetchall()
@@ -379,11 +378,24 @@ def rate(request: Request, order: str = Form(...)):
     # load current ratings and counts
     ratings: dict[int, float] = {}
     counts: dict[int, int] = {}
+    user_ratings: dict[int, float] = {}
+    user_counts: dict[int, int] = {}
     for media_id in ids:
         cur.execute("SELECT elo, rating_count FROM media WHERE id=?", (media_id,))
         elo, cnt = cur.fetchone()
         ratings[media_id] = elo
         counts[media_id] = cnt
+        cur.execute(
+            "INSERT OR IGNORE INTO user_media (username, media_id) VALUES (?, ?)",
+            (username, media_id),
+        )
+        cur.execute(
+            "SELECT elo, rating_count FROM user_media WHERE username=? AND media_id=?",
+            (username, media_id),
+        )
+        u_elo, u_cnt = cur.fetchone()
+        user_ratings[media_id] = u_elo
+        user_counts[media_id] = u_cnt
 
     K = 32
     for i in range(len(ids)):
@@ -392,19 +404,33 @@ def rate(request: Request, order: str = Form(...)):
             loser_id = ids[j]
             Ra = ratings[winner_id]
             Rb = ratings[loser_id]
+            uRa = user_ratings[winner_id]
+            uRb = user_ratings[loser_id]
             Ea = 1 / (1 + 10 ** ((Rb - Ra) / 400))
             Eb = 1 / (1 + 10 ** ((Ra - Rb) / 400))
             Ra = Ra + K * (1 - Ea)
             Rb = Rb + K * (0 - Eb)
+            EuA = 1 / (1 + 10 ** ((uRb - uRa) / 400))
+            EuB = 1 / (1 + 10 ** ((uRa - uRb) / 400))
+            uRa = uRa + K * (1 - EuA)
+            uRb = uRb + K * (0 - EuB)
             ratings[winner_id] = Ra
             ratings[loser_id] = Rb
+            user_ratings[winner_id] = uRa
+            user_ratings[loser_id] = uRb
             counts[winner_id] += 1
             counts[loser_id] += 1
+            user_counts[winner_id] += 1
+            user_counts[loser_id] += 1
 
     for media_id in ids:
         cur.execute(
             "UPDATE media SET elo=?, rating_count=? WHERE id=?",
             (ratings[media_id], counts[media_id], media_id),
+        )
+        cur.execute(
+            "UPDATE user_media SET elo=?, rating_count=? WHERE username=? AND media_id=?",
+            (user_ratings[media_id], user_counts[media_id], username, media_id),
         )
     conn.commit()
     conn.close()

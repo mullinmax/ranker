@@ -4,13 +4,14 @@
 <h2>Global ELO Ranking</h2>
 {% if elo_ranking %}
 <table class="stats-table">
-  <tr><th>#</th><th>Preview</th><th>Media</th><th>ELO</th></tr>
-  {% for media, elo in elo_ranking %}
+  <tr><th>#</th><th>Preview</th><th>Media</th><th>ELO</th><th>Ratings</th></tr>
+  {% for media, elo, cnt in elo_ranking %}
   <tr>
     <td>{{ loop.index }}</td>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
     <td>{{ '%.1f' % elo }}</td>
+    <td>{{ cnt }}</td>
   </tr>
   {% endfor %}
 </table>
@@ -20,13 +21,15 @@
 <h2>Your Highest Rated Media</h2>
 {% if user_highest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Your Avg</th><th>Global Avg</th></tr>
-  {% for media, user_score, global_score in user_highest %}
+  <tr><th>Preview</th><th>Media</th><th>Your ELO</th><th>Global ELO</th><th>Your Cnt</th><th>Global Cnt</th></tr>
+  {% for media, user_score, global_score, user_cnt, global_cnt in user_highest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
-    <td>{{ '%.2f' % user_score }}</td>
-    <td>{{ '%.2f' % global_score if global_score is not none else 'N/A' }}</td>
+    <td>{{ '%.1f' % user_score }}</td>
+    <td>{{ '%.1f' % global_score }}</td>
+    <td>{{ user_cnt }}</td>
+    <td>{{ global_cnt }}</td>
   </tr>
   {% endfor %}
 </table>
@@ -37,13 +40,15 @@
 <h2>Global Highest Rated Media</h2>
 {% if global_highest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th></tr>
-  {% for media, global_score, user_score in global_highest %}
+  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  {% for media, global_score, user_score, global_cnt, user_cnt in global_highest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
     <td>{{ '%.2f' % global_score }}</td>
     <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+    <td>{{ global_cnt }}</td>
+    <td>{{ user_cnt }}</td>
   </tr>
   {% endfor %}
 </table>
@@ -54,13 +59,15 @@
 <h2>Your Lowest Rated Media</h2>
 {% if user_lowest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Your Avg</th><th>Global Avg</th></tr>
-  {% for media, user_score, global_score in user_lowest %}
+  <tr><th>Preview</th><th>Media</th><th>Your ELO</th><th>Global ELO</th><th>Your Cnt</th><th>Global Cnt</th></tr>
+  {% for media, user_score, global_score, user_cnt, global_cnt in user_lowest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
-    <td>{{ '%.2f' % user_score }}</td>
-    <td>{{ '%.2f' % global_score if global_score is not none else 'N/A' }}</td>
+    <td>{{ '%.1f' % user_score }}</td>
+    <td>{{ '%.1f' % global_score }}</td>
+    <td>{{ user_cnt }}</td>
+    <td>{{ global_cnt }}</td>
   </tr>
   {% endfor %}
 </table>
@@ -71,13 +78,15 @@
 <h2>Global Lowest Rated Media</h2>
 {% if global_lowest %}
 <table class="stats-table">
-  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th></tr>
-  {% for media, global_score, user_score in global_lowest %}
+  <tr><th>Preview</th><th>Media</th><th>Global Avg</th><th>Your Avg</th><th>Global Cnt</th><th>Your Cnt</th></tr>
+  {% for media, global_score, user_score, global_cnt, user_cnt in global_lowest %}
   <tr>
     <td><img class="thumbnail" src="/media/{{ media }}" alt="{{ media }}" /></td>
     <td>{{ media }}</td>
     <td>{{ '%.2f' % global_score }}</td>
     <td>{{ '%.2f' % user_score if user_score is not none else 'N/A' }}</td>
+    <td>{{ global_cnt }}</td>
+    <td>{{ user_cnt }}</td>
   </tr>
   {% endfor %}
 </table>
