@@ -32,6 +32,11 @@ comma separated list. When set, an authenticated admin can visit `/admin` to
 manage accounts and upload new media files. The upload form accepts multiple
 files so an admin can add several media items in one request.
 
+The admin panel also allows configuring an Ollama endpoint for generating image
+embeddings. Set the URL, optional API key and model name then click "Generate
+Embeddings" to create embeddings for all media files. Previously processed
+images are skipped.
+
 ## Docker
 
 Build and run with Docker:
@@ -51,7 +56,7 @@ GitHub Actions workflow builds the Docker image and publishes it to GHCR on each
 
 ## Database schema
 
-The application uses a SQLite database with three tables:
+The application uses a SQLite database with several tables:
 
 ```
 users(id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -76,6 +81,12 @@ user_media(username TEXT,
            elo REAL DEFAULT 1000,
            rating_count INTEGER DEFAULT 0,
            PRIMARY KEY(username, media_id))
+
+embeddings(id INTEGER PRIMARY KEY AUTOINCREMENT,
+           media_id INTEGER,
+           model TEXT,
+           embedding TEXT,
+           UNIQUE(media_id, model))
 ```
 
 Each row in `rankings` stores the four media IDs shown together in their ranked

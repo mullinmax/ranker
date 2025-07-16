@@ -36,6 +36,17 @@
 <form method="post" action="/admin/remove_duplicates" onsubmit="return confirm('Remove duplicate images?');">
   <button type="submit">Remove Duplicates</button>
 </form>
+<h2>Ollama Settings</h2>
+<form method="post" action="/admin/set_ollama">
+  <input type="text" name="url" placeholder="URL" value="{{ ollama_url }}" required />
+  <input type="text" name="api_key" placeholder="API Key" value="{{ ollama_api_key }}" />
+  <input type="text" name="model" placeholder="Model" value="{{ ollama_model }}" required />
+  <button type="submit">Save</button>
+</form>
+<h2>Generate Embeddings</h2>
+<form method="post" action="/admin/generate_embeddings" onsubmit="return confirm('Generate embeddings?');">
+  <button type="submit">Generate Embeddings</button>
+</form>
 <script>
 const form = document.getElementById('upload-form');
 form.addEventListener('submit', async (e) => {

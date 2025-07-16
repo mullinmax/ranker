@@ -3,6 +3,10 @@ import os
 import sqlite3
 import time
 import random
+import base64
+import io
+import json
+import requests
 from fastapi import FastAPI, Request, Form, HTTPException, UploadFile, File
 from PIL import Image
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -32,6 +36,7 @@ BUILD_NUMBER = os.environ.get("BUILD_NUMBER", "dev")
 NUM_MEDIA = 4
 
 DATABASE = os.path.join(CONFIG_DIR, "database.db")
+OLLAMA_CONFIG_PATH = os.path.join(CONFIG_DIR, "ollama_config.json")
 
 
 def init_db():
@@ -64,6 +69,17 @@ def init_db():
             elo REAL DEFAULT 1000,
             rating_count INTEGER DEFAULT 0,
             PRIMARY KEY (username, media_id)
+        )
+        """
+    )
+    cur.execute(
+        """
+        CREATE TABLE IF NOT EXISTS embeddings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            media_id INTEGER,
+            model TEXT,
+            embedding TEXT,
+            UNIQUE(media_id, model)
         )
         """
     )
@@ -198,6 +214,87 @@ def get_rating_event_count() -> int:
     count = cur.fetchone()[0]
     conn.close()
     return count
+
+
+def load_ollama_config() -> tuple[str, str, str]:
+    """Load Ollama configuration from disk."""
+    if os.path.exists(OLLAMA_CONFIG_PATH):
+        try:
+            with open(OLLAMA_CONFIG_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return (
+                    data.get("url", ""),
+                    data.get("api_key", ""),
+                    data.get("model", ""),
+                )
+        except Exception:
+            pass
+    return "", "", ""
+
+
+def save_ollama_config(url: str, api_key: str, model: str) -> None:
+    """Persist Ollama configuration."""
+    with open(OLLAMA_CONFIG_PATH, "w", encoding="utf-8") as f:
+        json.dump({"url": url, "api_key": api_key, "model": model}, f)
+
+
+def generate_all_embeddings(url: str, api_key: str, model: str) -> int:
+    """Generate embeddings for all media and store new results."""
+    conn = sqlite3.connect(DATABASE)
+    cur = conn.cursor()
+    files = [
+        f
+        for f in os.listdir(MEDIA_DIR)
+        if os.path.isfile(os.path.join(MEDIA_DIR, f))
+    ]
+    for fname in files:
+        cur.execute("INSERT OR IGNORE INTO media (filename) VALUES (?)", (fname,))
+    conn.commit()
+
+    cur.execute("SELECT id, filename FROM media")
+    rows = cur.fetchall()
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    processed = 0
+    for media_id, fname in rows:
+        cur.execute(
+            "SELECT 1 FROM embeddings WHERE media_id=? AND model=?",
+            (media_id, model),
+        )
+        if cur.fetchone():
+            continue
+        path = os.path.join(MEDIA_DIR, fname)
+        try:
+            with Image.open(path) as img:
+                if getattr(img, "is_animated", False):
+                    img.seek(0)
+                img = img.convert("RGB")
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+        except Exception:
+            continue
+        try:
+            resp = requests.post(
+                url.rstrip("/") + "/api/embeddings",
+                json={"model": model, "prompt": b64},
+                headers=headers,
+                timeout=10,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            emb = data.get("embedding")
+            if emb is None:
+                continue
+            cur.execute(
+                "INSERT INTO embeddings (media_id, model, embedding) VALUES (?, ?, ?)",
+                (media_id, model, json.dumps(emb)),
+            )
+            conn.commit()
+            processed += 1
+        except Exception:
+            continue
+    conn.close()
+    return processed
 
 
 def delete_user(username: str) -> None:
@@ -543,6 +640,7 @@ def admin_panel(request: Request):
     users = list_users()
     rating_counts = get_user_rating_counts()
     media_total, media_counts = get_media_file_summary()
+    ollama_url, ollama_api_key, ollama_model = load_ollama_config()
 
     return templates.TemplateResponse(
         "admin.html",
@@ -554,6 +652,9 @@ def admin_panel(request: Request):
             "media_total": media_total,
             "media_counts": media_counts,
             "build_number": BUILD_NUMBER,
+            "ollama_url": ollama_url,
+            "ollama_api_key": ollama_api_key,
+            "ollama_model": ollama_model,
             "show_back": True,
             "show_admin": False,
             "show_stats_link": True,
@@ -598,6 +699,32 @@ def admin_upload_media(
         file_path = os.path.join(MEDIA_DIR, media_file.filename)
         with open(file_path, "wb") as f:
             f.write(media_file.file.read())
+    return RedirectResponse("/admin", status_code=303)
+
+
+@app.post("/admin/set_ollama")
+def admin_set_ollama(
+    request: Request,
+    url: str = Form(...),
+    api_key: str = Form(""),
+    model: str = Form(...),
+):
+    username = request.cookies.get("username")
+    if not is_admin(username):
+        return RedirectResponse("/login")
+    save_ollama_config(url, api_key, model)
+    return RedirectResponse("/admin", status_code=303)
+
+
+@app.post("/admin/generate_embeddings")
+def admin_generate_embeddings(request: Request):
+    username = request.cookies.get("username")
+    if not is_admin(username):
+        return RedirectResponse("/login")
+    url, api_key, model = load_ollama_config()
+    if not url or not model:
+        raise HTTPException(status_code=400, detail="Ollama configuration missing")
+    generate_all_embeddings(url, api_key, model)
     return RedirectResponse("/admin", status_code=303)
 
 

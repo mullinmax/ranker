@@ -5,6 +5,8 @@ import os
 import sqlite3
 import tempfile
 from PIL import Image
+import base64
+import io
 
 # Ensure the app uses a writable location during import
 _base = tempfile.mkdtemp()
@@ -158,3 +160,80 @@ def test_remove_duplicates_endpoint(admin_client: TestClient):
     remaining = [path1.exists(), path2.exists()]
     assert remaining.count(True) == 1
     assert path3.exists()
+
+
+def test_generate_embeddings(admin_client: TestClient, tmp_path: Path, monkeypatch):
+    admin_client.post("/register", data={"username": "admin", "password": "x"}, follow_redirects=False)
+    admin_client.post("/login", data={"username": "admin", "password": "x"}, follow_redirects=False)
+
+    img = Image.new("RGB", (1, 1), color="red")
+    path = Path(main.MEDIA_DIR) / "img.png"
+    img.save(path)
+
+    called = {}
+
+    def fake_post(url, json=None, headers=None, timeout=10):
+        called["url"] = url
+        called["json"] = json
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"embedding": [0.1, 0.2]}
+
+        return Resp()
+
+    monkeypatch.setattr(main.requests, "post", fake_post)
+
+    admin_client.post(
+        "/admin/set_ollama",
+        data={"url": "http://example", "api_key": "k", "model": "m"},
+        follow_redirects=False,
+    )
+    resp = admin_client.post("/admin/generate_embeddings", follow_redirects=False)
+    assert resp.status_code == 303
+    assert called.get("url") == "http://example/api/embeddings"
+
+    conn = sqlite3.connect(main.DATABASE)
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM embeddings")
+    count = cur.fetchone()[0]
+    conn.close()
+    assert count == 1
+
+
+def test_gif_first_frame_used(admin_client: TestClient, tmp_path: Path, monkeypatch):
+    admin_client.post("/register", data={"username": "admin", "password": "x"}, follow_redirects=False)
+    admin_client.post("/login", data={"username": "admin", "password": "x"}, follow_redirects=False)
+
+    frames = [Image.new("RGB", (1, 1), color=c) for c in ["red", "blue"]]
+    gif_path = Path(main.MEDIA_DIR) / "anim.gif"
+    frames[0].save(gif_path, save_all=True, append_images=frames[1:], format="GIF")
+
+    captured = {}
+
+    def fake_post(url, json=None, headers=None, timeout=10):
+        captured["prompt"] = json["prompt"]
+
+        class Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"embedding": [0.1]}
+
+        return Resp()
+
+    monkeypatch.setattr(main.requests, "post", fake_post)
+    admin_client.post(
+        "/admin/set_ollama",
+        data={"url": "http://example", "api_key": "", "model": "m"},
+        follow_redirects=False,
+    )
+    admin_client.post("/admin/generate_embeddings", follow_redirects=False)
+
+    data = base64.b64decode(captured["prompt"])
+    with Image.open(io.BytesIO(data)) as im:
+        assert im.getpixel((0, 0)) == (255, 0, 0)
