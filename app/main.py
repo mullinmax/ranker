@@ -47,6 +47,9 @@ def init_db():
     cur.execute(
         "CREATE TABLE IF NOT EXISTS elo (media TEXT PRIMARY KEY, rating REAL)"
     )
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS combos (username TEXT, combo TEXT, rated_at INTEGER, PRIMARY KEY(username, combo))"
+    )
     # Ensure rated_at column exists if database was created with older schema
     cur.execute("PRAGMA table_info(ratings)")
     cols = [row[1] for row in cur.fetchall()]
@@ -120,16 +123,51 @@ def get_media_files(username: str, count: int) -> list[str]:
         (username,),
     )
     last_times = {row[0]: row[1] for row in cur.fetchall()}
+    cur.execute("SELECT combo FROM combos WHERE username=?", (username,))
+    seen_combos = {row[0] for row in cur.fetchall()}
     conn.close()
 
     scored_files: list[tuple[int, str]] = []
     for f in files:
-        last_time = last_times.get(f)
-        last_time = last_time if last_time is not None else 0
+        last_time = last_times.get(f, 0)
         scored_files.append((last_time, f))
 
-    scored_files.sort(key=lambda x: (x[0], x[1]))
-    return [f for _, f in scored_files[:count]]
+    scored_files.sort(key=lambda x: x[0])
+
+    if len(files) <= count:
+        chosen = [f for _, f in scored_files]
+        random.shuffle(chosen)
+        return chosen
+
+    half = len(scored_files) // 2
+    old_files = [f for _, f in scored_files[:half]]
+    recent_files = [f for _, f in scored_files[half:]]
+
+    def pick_candidate() -> list[str]:
+        num_old = count // 2
+        num_recent = count - num_old
+        candidates: list[str] = []
+        if old_files:
+            candidates.extend(random.sample(old_files, min(num_old, len(old_files))))
+        remaining = [f for f in recent_files if f not in candidates]
+        if len(remaining) < num_recent:
+            remaining = [f for _, f in scored_files if f not in candidates]
+        if remaining:
+            candidates.extend(random.sample(remaining, min(num_recent, len(remaining))))
+        while len(candidates) < min(count, len(files)):
+            extra = random.choice(files)
+            if extra not in candidates:
+                candidates.append(extra)
+        random.shuffle(candidates)
+        return candidates[:count]
+
+    for _ in range(20):
+        candidate = pick_candidate()
+        key = ",".join(sorted(candidate))
+        if key not in seen_combos:
+            return candidate
+
+    return pick_candidate()
 
 
 def change_user_password(username: str, new_password: str) -> None:
@@ -291,8 +329,14 @@ def rate(request: Request, order: str = Form(...)):
             (username, file, rank, ts),
         )
         cur.execute(
-            "INSERT OR IGNORE INTO elo (media, rating) VALUES (?, ?)", (file, 1000)
+            "INSERT OR IGNORE INTO elo (media, rating) VALUES (?, ?)",
+            (file, 1000),
         )
+    combo_key = ",".join(sorted(files))
+    cur.execute(
+        "INSERT OR REPLACE INTO combos (username, combo, rated_at) VALUES (?, ?, ?)",
+        (username, combo_key, ts),
+    )
     K = 32
     for i in range(len(files)):
         for j in range(i + 1, len(files)):
