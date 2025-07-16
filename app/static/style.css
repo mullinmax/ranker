@@ -22,6 +22,13 @@ body {
   margin: 0 auto;
 }
 
+/* Full width layout for the ranking page */
+.ranking-container {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .admin-container {
   text-align: left;
   width: 100%;
