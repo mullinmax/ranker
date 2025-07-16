@@ -69,7 +69,13 @@ rankings(id INTEGER PRIMARY KEY AUTOINCREMENT,
          second_id INTEGER,
          third_id INTEGER,
          fourth_id INTEGER,
-         rated_at INTEGER)
+         rated_at INTEGER),
+
+user_media(username TEXT,
+           media_id INTEGER,
+           elo REAL DEFAULT 1000,
+           rating_count INTEGER DEFAULT 0,
+           PRIMARY KEY(username, media_id))
 ```
 
 Each row in `rankings` stores the four media IDs shown together in their ranked
@@ -92,3 +98,7 @@ Rb_new = Rb + K * (0 - Eb)
 
 These values are then displayed on the statistics page ordered from highest to
 lowest.
+
+Each user also maintains personal Elo ratings for every media item they have
+ranked. The stats page shows your own Elo alongside the global values for the
+highest and lowest rated media.
