@@ -5,19 +5,33 @@
 :root {
   --header-height: 60px;
   --footer-height: 80px;
+  --bg-color: #f4f4f4;
+  --text-color: #000;
+  --card-bg: #fff;
+  --header-bg: #fff;
+  --footer-bg: #fff;
 }
 
 body {
   font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   margin: 0;
   padding-top: var(--header-height);
   padding-bottom: var(--footer-height);
   min-height: 100vh;
 }
 
+body.dark-mode {
+  --bg-color: #222;
+  --text-color: #eee;
+  --card-bg: #333;
+  --header-bg: #333;
+  --footer-bg: #333;
+}
+
 .container {
-  background: white;
+  background: var(--card-bg);
   padding: 2rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   border-radius: 4px;
@@ -30,8 +44,14 @@ body {
 /* Full width layout for the ranking page */
 .ranking-container {
   max-width: none;
-  padding-left: 0;
-  padding-right: 0;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  min-height: calc(100vh - var(--header-height) - var(--footer-height));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .admin-container {
@@ -87,13 +107,14 @@ img {
   display: flex;
   justify-content: center;
   align-items: center;
+  border: 1px solid #ccc;
   aspect-ratio: 4 / 3;
   width: 100%;
 }
 
 .media-grid {
   display: grid;
-  gap: 1rem;
+  gap: 0.5rem;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(2, 1fr);
   width: min(100vw, calc((100vh - var(--header-height) - var(--footer-height)) * 4 / 3));
@@ -136,7 +157,7 @@ img {
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background: white;
+  background: var(--header-bg);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   z-index: 1000;
 }
@@ -147,7 +168,7 @@ img {
   right: 0;
   text-align: center;
   padding: 0.5rem 1rem;
-  background: white;
+  background: var(--footer-bg);
   box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
 }
 
@@ -201,8 +222,9 @@ img {
     height: 100%;
   }
   #rate-form button {
-    font-size: 1.5rem;
-    padding: 1rem;
+    font-size: 2rem;
+    padding: 1.25rem 1.5rem;
+    width: 100%;
   }
   #rate-form {
     margin: 0;
@@ -227,10 +249,24 @@ img {
   background-color: #f0f0f0;
 }
 
+.stats-table th.sortable {
+  cursor: pointer;
+  position: relative;
+}
+
+.stats-table th.sortable .sort-arrow {
+  margin-left: 0.25rem;
+}
+
+.stats-table th[data-dir] {
+  background-color: #e0e0e0;
+}
+
 .thumbnail {
   max-width: 75px;
   max-height: 75px;
   object-fit: contain;
+  margin: 0;
 }
 
 @keyframes fade-in {
