@@ -6,9 +6,8 @@
 </head>
 <body{% if body_class %} class="{{ body_class }}"{% endif %}>
 <div class="container{% if container_class %} {{ container_class }}{% endif %}">
-{% if username %}
   <div class="header">
-    <span class="username">{{ username }}</span>
+    {% if username %}<span class="username">{{ username }}</span>{% endif %}
     {% if show_admin %}
     <form method="get" action="/admin">
       <button type="submit">Admin</button>
@@ -24,15 +23,38 @@
       <button type="submit">Back to Ranking</button>
     </form>
     {% endif %}
+    {% if username %}
     <form method="get" action="/logout">
       <button type="submit">Logout</button>
     </form>
+    {% endif %}
+    <button id="theme-toggle" type="button">🌙</button>
   </div>
-{% endif %}
 {% block content %}{% endblock %}
 </div>
 <div class="footer">
   {% block footer %}{% endblock %}
 </div>
+<script>
+function applyTheme(mode){
+  if(mode === 'dark'){
+    document.body.classList.add('dark-mode');
+    document.getElementById('theme-toggle').textContent = '☀️';
+  } else {
+    document.body.classList.remove('dark-mode');
+    document.getElementById('theme-toggle').textContent = '🌙';
+  }
+}
+
+const storedTheme = localStorage.getItem('theme');
+applyTheme(storedTheme);
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const dark = document.body.classList.contains('dark-mode');
+  const mode = dark ? 'light' : 'dark';
+  localStorage.setItem('theme', mode);
+  applyTheme(mode);
+});
+</script>
 </body>
 </html>
